@@ -37,8 +37,22 @@
       </div>
 
       <el-container v-if="analysisState === 'SUCCESS'" style="height: 100%">
-        <el-main style="padding: 5px; height: 100%">
-          <main-page :file="file"/>
+        <div style="left: 0%;top: 60px; position: fixed; z-index: 100; width: 10%; height: 100%; font-size: 16px">
+          <el-card :header="$t('jifa.threadDump.navigation')" style="height: 100%;">
+            <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDump.navToTop') }}</a></div>
+            <el-divider/>
+            <div class="nav-item"><a href="#overview">{{ $t('jifa.threadDump.basicInfo') }}</a></div>
+            <div class="nav-item"><a href="#threadSummary">{{ $t('jifa.threadDump.threadSummary') }}</a></div>
+            <div class="nav-item"><a href="#threadGroupSummary">{{ $t('jifa.threadDump.threadGroupSummary') }}</a></div>
+            <div class="nav-item"><a href="#monitors">{{ $t('jifa.threadDump.monitors') }}</a></div>
+            <div class="nav-item"><a href="#callSiteTree">{{ $t('jifa.threadDump.callSiteTree') }}</a></div>
+            <el-divider/>
+            <div class="nav-item"><a href="#fileContent" @click="showDetail('fileContent')">{{ $t('jifa.threadDump.fileContent') }}</a></div>
+          </el-card>
+        </div>
+      
+        <el-main style="padding: 5px; height: 100%;">
+          <main-page :file="file" style="width: 90%; left: 10%;" id="navTop"/>
         </el-main>
       </el-container>
     </el-main>
@@ -111,6 +125,9 @@ export default {
         this.pollProgressOfAnalysis();
       })
     },
+    showDetail(id) {
+       //TODO: expand this
+    }
   },
   mounted() {
     this.analyzeThreadDump();

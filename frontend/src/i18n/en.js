@@ -431,6 +431,8 @@ exports.default = {
 
     threadDump: {
       title: "Thread Dump Analysis",
+      navigation: "Navigation",
+      navToTop: "Top",
       addFile: "Add Thread Dump File",
       overview: 'Overview',
       lockView: 'Lock View',
@@ -448,6 +450,7 @@ exports.default = {
       gcThread: "GC Thread",
       otherThread: "Other Thread",
       total: "Total",
+      monitors: "Java Monitors",
       callSiteTree: "Call Site Tree",
       fileContent: "File Content",
       loadFileContent: "Load",

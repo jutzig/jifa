@@ -27,7 +27,9 @@
         type="error"
         :closable="false">
     </el-alert>
-    <el-collapse v-model="activeNames" style="width: 100%">
+    
+    
+    <el-collapse v-model="activeNames" style="width: 90%" id="overview">
       <!-- basic info -->
       <el-collapse-item v-loading="loading" :title="$t('jifa.threadDump.basicInfo')" name="basicInfo">
         <el-table v-loading="loading"
@@ -50,7 +52,7 @@
       </el-collapse-item>
 
       <!-- threads -->
-      <el-collapse-item v-loading="loading" :title="$t('jifa.threadDump.threadSummary')" name="threadSummary">
+      <el-collapse-item v-loading="loading" :title="$t('jifa.threadDump.threadSummary')" name="threadSummary" id="threadSummary">
         <el-table v-loading="loading"
                   :data="threadStats"
                   :show-header="false"
@@ -77,7 +79,7 @@
 
       <!-- thread groups -->
       <el-collapse-item v-loading="loading" v-if="threadGroupStats && threadGroupStats.length > 0"
-                        :title="$t('jifa.threadDump.threadGroupSummary')" name="threadGroupSummary">
+                        :title="$t('jifa.threadDump.threadGroupSummary')" name="threadGroupSummary" id="threadGroupSummary">
         <el-table v-loading="loading"
                   :data="threadGroupStats"
                   :show-header="false"
@@ -106,16 +108,16 @@
       </el-collapse-item>
 
       <!-- call site tree -->
-      <el-collapse-item title="Java Monitors" name="monitors">
+      <el-collapse-item :title="$t('jifa.threadDump.monitors')" name="monitors" id="monitors">
         <monitor :file="file"/>
       </el-collapse-item>
 
       <!-- call site tree -->
-      <el-collapse-item :title="$t('jifa.threadDump.callSiteTree')" name="callSiteTree">
+      <el-collapse-item :title="$t('jifa.threadDump.callSiteTree')" name="callSiteTree" id="callSiteTree">
         <call-site-tree :file="file"/>
       </el-collapse-item>
 
-      <el-collapse-item :title="$t('jifa.threadDump.fileContent')" name="fileContent">
+      <el-collapse-item :title="$t('jifa.threadDump.fileContent')" name="fileContent" id="fileContent">
         <file-content :file="file"/>
       </el-collapse-item>
     </el-collapse>
@@ -329,7 +331,6 @@ export default {
           counts: overview.threadGroupStat[k].counts,
         })
       }
-      this.sort();
       this.threadStats.push({
         key: this.$t("jifa.threadDump.total"),
         value: this.sum(overview.threadStat.counts),
