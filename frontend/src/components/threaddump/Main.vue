@@ -56,6 +56,8 @@
         <el-table v-loading="loading"
                   :data="threadStats"
                   :show-header="false"
+                  row-key="key"
+                  :expand-row-keys="[threadStats[0].key]"
                   stripe
                   :cell-style='cellStyle'>
           <el-table-column type="expand">
@@ -331,6 +333,7 @@ export default {
           counts: overview.threadGroupStat[k].counts,
         })
       }
+      this.sort();
       this.threadStats.push({
         key: this.$t("jifa.threadDump.total"),
         value: this.sum(overview.threadStat.counts),
