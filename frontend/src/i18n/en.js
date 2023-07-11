@@ -456,6 +456,11 @@ exports.default = {
       loadFileContent: "Load",
       loadMoreFileContent: "Load More",
       threadNameLabel: "Thread Name",
+      blockedThreadsLabel: "Blocked Threads",
+
+      blockedThreads: {
+        title: "{blocker} is blocking one other thread | {blocker} is blocking {count} other threads"
+      }
     }
   }
 };

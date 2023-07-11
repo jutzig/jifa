@@ -33,3 +33,4 @@ cloud/
 
 bin
 deploy/k8s_pattern/*.log
+.settings/

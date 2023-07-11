@@ -50,6 +50,11 @@
           </el-table-column>
         </el-table>
       </el-collapse-item>
+      
+      <!-- Blocked Threads-->
+      <el-collapse-item :title="$t('jifa.threadDump.blockedThreadsLabel')" name="blockedThreads" id="blockedThreads">
+        <blocked-threads :file="file"/>
+      </el-collapse-item>
 
       <!-- threads -->
       <el-collapse-item v-loading="loading" :title="$t('jifa.threadDump.threadSummary')" name="threadSummary" id="threadSummary">
@@ -57,7 +62,7 @@
                   :data="threadStats"
                   :show-header="false"
                   row-key="key"
-                  :expand-row-keys="[threadStats[0].key]"
+                  :expand-row-keys="[ threadStats == null ? '' : threadStats[0].key]"
                   stripe
                   :cell-style='cellStyle'>
           <el-table-column type="expand">
@@ -109,7 +114,7 @@
         </el-table>
       </el-collapse-item>
 
-      <!-- call site tree -->
+      <!-- monitors -->
       <el-collapse-item :title="$t('jifa.threadDump.monitors')" name="monitors" id="monitors">
         <monitor :file="file"/>
       </el-collapse-item>
@@ -133,6 +138,7 @@ import Reference from "@/components/reference";
 import Thread from "@/components/threaddump/Thread";
 import Monitor from "@/components/threaddump/Monitor";
 import CallSiteTree from "@/components/threaddump/CallSiteTree";
+import BlockedThreads from "@/components/threaddump/BlockedThreads";
 import FileContent from "@/components/threaddump/Content";
 
 import {formatTime, threadDumpService} from '@/util'
@@ -141,6 +147,7 @@ export default {
   props: ['file'],
   components: {
     DoughnutChart,
+    BlockedThreads,
     Reference,
     Thread,
     Monitor,
@@ -162,7 +169,7 @@ export default {
       basicInfo: null,
       threadStats: null,
       threadGroupStats: null,
-      activeNames: ['basicInfo', 'threadSummary', 'threadGroupSummary', 'monitors', 'callSiteTree'],
+      activeNames: ['basicInfo', 'threadSummary', 'blockedThreads', 'threadGroupSummary', 'monitors', 'callSiteTree'],
       deadLockCount: 0,
       errorCount: 0,
 

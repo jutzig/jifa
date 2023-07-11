@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2022 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,26 +10,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-:focus {
-    outline: none;
-}
+package org.eclipse.jifa.tda.vo;
 
-button:focus {
-    outline: none;
-}
+import java.util.List;
 
-a:hover {
-    text-decoration: none;
-}
+import lombok.Data;
 
-a:not([href]):not([tabindex]) {
-    color: #606266;
-}
-
-a:not([href]):not([tabindex]):hover {
-    color: #409EFF;
-}
-
-a:not([href]):not([tabindex]):focus {
-    color: #409EFF;
+/**
+ * represents a thread that blocks other threads
+ */
+@Data
+public class VBlockingThread {
+    private VMonitor heldLock;
+    private VThread blockingThread;
+    private List<VThread> blockedThreads;
 }

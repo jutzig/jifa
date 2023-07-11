@@ -13,12 +13,18 @@
 
 package org.eclipse.jifa.tda;
 
+import static org.junit.Assert.assertEquals;
+
+import java.nio.file.Path;
+import java.util.List;
+
 import org.eclipse.jifa.common.listener.DefaultProgressListener;
 import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.vo.PageView;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.vo.Content;
 import org.eclipse.jifa.tda.vo.Overview;
+import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
@@ -49,5 +55,26 @@ public class TestAnalyzer extends TestBase {
         Content line2 = tda.content(2, 1);
         Assert.assertEquals("Full thread dump OpenJDK 64-Bit Server VM (18-internal+0-adhoc.denghuiddh.my-jdk mixed " +
                             "mode, sharing):", line2.getContent().get(0));
+    }
+
+    @Test
+    public void testBlockingThreads() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_large_with_blocked.log"), new DefaultProgressListener());
+        List<VBlockingThread> blockingThreads = tda.blockingThreads();
+        assertEquals(4,blockingThreads.size());
+
+        VBlockingThread t = blockingThreads.get(0);
+        assertEquals("Thread-7728157", t.getBlockingThread().getName());
+        assertEquals(19, t.getBlockedThreads().size());
+        assertEquals("Thread-7716893", t.getBlockedThreads().get(0).getName());
+        assertEquals(0x00000001d3af89c0L, t.getHeldLock().getAddress());
+        assertEquals("org.example.jmsadapter.listener.CrossInstanceLock", t.getHeldLock().getClazz());
+
+        t = blockingThreads.get(1);
+        assertEquals("Thread-7728079", t.getBlockingThread().getName());
+        assertEquals(6, t.getBlockedThreads().size());
+        assertEquals("Thread-7728084", t.getBlockedThreads().get(0).getName());
+        assertEquals(0x00000001d3b1f158L, t.getHeldLock().getAddress());
+        assertEquals("org.example.jmsadapter.listener.CrossInstanceLock", t.getHeldLock().getClazz());
     }
 }

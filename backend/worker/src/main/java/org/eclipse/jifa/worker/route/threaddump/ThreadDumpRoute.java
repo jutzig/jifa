@@ -20,6 +20,7 @@ import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.vo.Content;
 import org.eclipse.jifa.tda.vo.Overview;
+import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
@@ -46,6 +47,14 @@ public class ThreadDumpRoute extends ThreadDumpBaseRoute {
                              PagingRequest paging) {
         ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
         promise.complete(analyzer.callSiteTree(parentId, paging));
+    }
+
+    @RouteMeta(path = "/thread")
+    public void thread(Promise<VThread> promise,
+                        @ParamKey("file") String file,
+                        @ParamKey(value = "id", mandatory = true) int id) {
+        ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
+        promise.complete(analyzer.thread(id));
     }
 
     @RouteMeta(path = "/threads")
@@ -103,5 +112,11 @@ public class ThreadDumpRoute extends ThreadDumpBaseRoute {
                                  PagingRequest paging) {
         ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
         promise.complete(analyzer.threadsByMonitor(id, state, paging));
+    }
+
+    @RouteMeta(path = "/threadsBlocking")
+    public void threadsBlocking(Promise<List<VBlockingThread>> promise, @ParamKey("file") String file) {
+        ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
+        promise.complete(analyzer.blockingThreads());
     }
 }

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class JStackParser implements Parser {
 
         for (int i = 0; i < count; i++) {
             ES.submit(() -> {
-                //noinspection InfiniteLoopStatement
+                // noinspection InfiniteLoopStatement
                 while (true) {
                     try {
                         QUEUE.take().parse();
@@ -140,6 +141,8 @@ public class JStackParser implements Parser {
                 ps.load(PATTERNS.class.getClassLoader().getResourceAsStream(fn));
                 Field[] fields = PATTERNS.class.getDeclaredFields();
                 for (Field field : fields) {
+                    if(field.isSynthetic())
+                        continue;
                     String value = (String) ps.get(field.getName());
                     if (value == null) {
                         throw new ParserException(field.getName() + " not found in " + fn);
@@ -240,7 +243,7 @@ public class JStackParser implements Parser {
 
         void skipSMR() throws IOException {
             if (PATTERNS.SMR_HEAD.equals(input.currentLine())) {
-                //noinspection StatementWithEmptyBody
+                // noinspection StatementWithEmptyBody
                 while (StringUtils.isNotBlank(input.readLine()))
                     ;
             }
@@ -395,7 +398,7 @@ public class JStackParser implements Parser {
             }
 
             if (name.contains("GC") || name.contains("G1") || name.contains("CMS") ||
-                name.contains("Concurrent Mark-Sweep")) {
+                    name.contains("Concurrent Mark-Sweep")) {
                 return ThreadType.GC;
             }
 
@@ -518,7 +521,7 @@ public class JStackParser implements Parser {
         }
 
         Monitor assembleMonitor(Thread thread, boolean needMap, MonitorState state, long address,
-                                boolean isClass, String clazz) {
+                boolean isClass, String clazz) {
             RawMonitor rm = new RawMonitor();
             rm.setAddress(address);
             rm.setClassInstance(isClass);
@@ -609,25 +612,25 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal parking line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread, MonitorState.PARKING,
-                                                     Long.decode(m.group("address")),
-                                                     false, symbolPool.add(m.group("class"))));
+                                Long.decode(m.group("address")),
+                                false, symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.WAITING_ON.prefix())) {
                         assert last != null;
                         if (line.contains("<no object reference available>")) {
                             monitors
-                                .add(assembleMonitor(thread, !deadLockThread,
-                                                     MonitorState.WAITING_ON_NO_OBJECT_REFERENCE_AVAILABLE,
-                                                     -1, false, null));
+                                    .add(assembleMonitor(thread, !deadLockThread,
+                                            MonitorState.WAITING_ON_NO_OBJECT_REFERENCE_AVAILABLE,
+                                            -1, false, null));
                         } else {
                             m = PATTERNS.WAITING_ON.matcher(line);
                             if (!m.matches()) {
                                 throw new ParserException("Illegal waiting line: " + line);
                             }
                             monitors
-                                .add(assembleMonitor(thread, !deadLockThread, MonitorState.WAITING_ON,
-                                                     Long.decode(m.group("address")),
-                                                     m.group("isClass") != null,
-                                                     symbolPool.add(m.group("class"))));
+                                    .add(assembleMonitor(thread, !deadLockThread, MonitorState.WAITING_ON,
+                                            Long.decode(m.group("address")),
+                                            m.group("isClass") != null,
+                                            symbolPool.add(m.group("class"))));
                         }
                     } else if (line.startsWith(MonitorState.WAITING_TO_RE_LOCK.prefix())) {
                         assert last != null;
@@ -636,21 +639,21 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal waiting to re-lock line: " + line);
                         }
                         monitors
-                            .add(assembleMonitor(thread, !deadLockThread, MonitorState.WAITING_TO_RE_LOCK,
-                                                 Long.decode(m.group("address")),
-                                                 m.group("isClass") != null,
-                                                 symbolPool.add(m.group("class"))));
+                                .add(assembleMonitor(thread, !deadLockThread, MonitorState.WAITING_TO_RE_LOCK,
+                                        Long.decode(m.group("address")),
+                                        m.group("isClass") != null,
+                                        symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.WAITING_ON_CLASS_INITIALIZATION.prefix())) {
                         assert last != null;
                         m = PATTERNS.WAITING_ON_CLASS_INITIALIZATION.matcher(line);
                         if (!m.matches()) {
                             throw new ParserException(
-                                "Illegal waiting on class initialization line: " + line);
+                                    "Illegal waiting on class initialization line: " + line);
                         }
                         monitors
-                            .add(assembleMonitor(thread, !deadLockThread,
-                                                 MonitorState.WAITING_ON_CLASS_INITIALIZATION,
-                                                 -1, true, symbolPool.add(m.group("class"))));
+                                .add(assembleMonitor(thread, !deadLockThread,
+                                        MonitorState.WAITING_ON_CLASS_INITIALIZATION,
+                                        -1, true, symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.LOCKED.prefix())) {
                         checkLastFrameNotNull(last, line);
                         m = PATTERNS.LOCKED.matcher(line);
@@ -658,9 +661,9 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal locked line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread, MonitorState.LOCKED,
-                                                     Long.decode(m.group("address")),
-                                                     m.group("isClass") != null,
-                                                     symbolPool.add(m.group("class"))));
+                                Long.decode(m.group("address")),
+                                m.group("isClass") != null,
+                                symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.WAITING_TO_LOCK.prefix())) {
                         checkLastFrameNotNull(last, line);
                         m = PATTERNS.WAITING_TO_LOCK.matcher(line);
@@ -668,9 +671,9 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal waiting to lock line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread, MonitorState.WAITING_TO_LOCK,
-                                                     Long.decode(m.group("address")),
-                                                     m.group("isClass") != null,
-                                                     symbolPool.add(m.group("class"))));
+                                Long.decode(m.group("address")),
+                                m.group("isClass") != null,
+                                symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.ELIMINATED.prefix())) {
                         checkLastFrameNotNull(last, line);
                         m = PATTERNS.ELIMINATED.matcher(line);
@@ -678,21 +681,21 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal eliminated lock line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread, MonitorState.ELIMINATED,
-                                                     Long.decode(m.group("address")),
-                                                     m.group("isClass") != null,
-                                                     symbolPool.add(m.group("class"))));
+                                Long.decode(m.group("address")),
+                                m.group("isClass") != null,
+                                symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.ELIMINATED_SCALAR_REPLACED.prefix())) {
                         checkLastFrameNotNull(last, line);
                         m = PATTERNS.ELIMINATED_SCALAR_REPLACED.matcher(line);
                         if (!m.matches()) {
                             throw new ParserException(
-                                "Illegal eliminated(scalar replaced) lock line: " + line);
+                                    "Illegal eliminated(scalar replaced) lock line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread,
-                                                     MonitorState.ELIMINATED_SCALAR_REPLACED,
-                                                     -1,
-                                                     false,
-                                                     symbolPool.add(m.group("class"))));
+                                MonitorState.ELIMINATED_SCALAR_REPLACED,
+                                -1,
+                                false,
+                                symbolPool.add(m.group("class"))));
                     } else if (line.equals(PATTERNS.LOCKED_OWNABLE_SYNCHRONIZERS)) {
                         // concurrent locks
                         int lockIndex = i + 1;
@@ -721,7 +724,7 @@ public class JStackParser implements Parser {
                                 }
                             } while (true);
                             trace.setConcurrentLocks(
-                                concurrentLocks.toArray(new ConcurrentLock[0]));
+                                    concurrentLocks.toArray(new ConcurrentLock[0]));
                         }
                         break;
                     } else {

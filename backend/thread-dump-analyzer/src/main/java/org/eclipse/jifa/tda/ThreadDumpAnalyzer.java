@@ -13,6 +13,21 @@
 
 package org.eclipse.jifa.tda;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jifa.common.cache.Cacheable;
 import org.eclipse.jifa.common.cache.ProxyBuilder;
@@ -21,6 +36,7 @@ import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.util.CollectionUtil;
 import org.eclipse.jifa.common.util.PageViewBuilder;
 import org.eclipse.jifa.common.vo.PageView;
+import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.model.CallSiteTree;
@@ -31,22 +47,16 @@ import org.eclipse.jifa.tda.model.Monitor;
 import org.eclipse.jifa.tda.model.RawMonitor;
 import org.eclipse.jifa.tda.model.Snapshot;
 import org.eclipse.jifa.tda.model.Thread;
+import org.eclipse.jifa.tda.model.Trace;
 import org.eclipse.jifa.tda.parser.ParserFactory;
 import org.eclipse.jifa.tda.vo.Content;
 import org.eclipse.jifa.tda.vo.Overview;
+import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.common.base.Optional;
 
 /**
  * Thread dump analyzer
@@ -195,6 +205,21 @@ public class ThreadDumpAnalyzer {
         return buildVThreadPageView(threads, paging);
     }
 
+ /**
+     * @param id   the thread id
+     * @return the thread
+     */
+    public VThread thread(int id) {
+        Thread thread = snapshot.getThreadMap().get(id);
+        if (thread == null) {
+            throw new IllegalArgumentException("Thread id is illegal: " + id);
+        }
+        VThread vThread = new VThread();
+        vThread.setId(thread.getId());
+        vThread.setName(thread.getName());
+        return vThread;
+    }
+
     /**
      * @param groupName the thread group name
      * @param paging    paging request
@@ -302,4 +327,63 @@ public class ThreadDumpAnalyzer {
         map.forEach((s, l) -> counts.put(s, l.size()));
         return counts;
     }
+
+    /**
+     * 
+     * @return the threads that block one or more other threads
+     */
+    public List<VBlockingThread> blockingThreads() {
+       
+        List<VBlockingThread> result = new ArrayList<>();
+        
+        Map<Integer,Map<MonitorState, List<Thread>>> allMonitors = snapshot.getMonitorThreads();
+        for (Entry<Integer,Map<MonitorState, List<Thread>>> monitorEntry : allMonitors.entrySet()) {
+            Map<MonitorState, List<Thread>> monitorMap = monitorEntry.getValue();
+            if(!monitorMap.keySet().contains(MonitorState.LOCKED))
+                continue;
+            Thread blockingThread = monitorMap.get(MonitorState.LOCKED).stream().findFirst().orElse(null);
+            List<Thread> blockedThreads = new ArrayList<>();
+            if(monitorMap.keySet().contains(MonitorState.WAITING_TO_LOCK))
+                blockedThreads.addAll(monitorMap.get(MonitorState.WAITING_TO_LOCK));
+            if(monitorMap.keySet().contains(MonitorState.WAITING_TO_RE_LOCK))
+                blockedThreads.addAll(monitorMap.get(MonitorState.WAITING_TO_RE_LOCK));
+            if(!blockedThreads.isEmpty() && blockingThread!=null)
+            {
+                VBlockingThread r = new VBlockingThread();
+                r.setBlockedThreads(blockedThreads.stream().map(t -> new VThread(t.getId(), t.getName())).collect(Collectors.toList()));
+                r.setBlockingThread(new VThread(blockingThread.getId(), blockingThread.getName()));
+                Monitor mon = findBlockingMonitor(blockedThreads.get(0));
+                if(mon!=null) {
+                    r.setHeldLock(new VMonitor(mon.getRawMonitor().getId(), mon.getRawMonitor().getAddress(),mon.getRawMonitor().isClassInstance(), mon.getRawMonitor().getClazz(), mon.getState()));
+                }
+                result.add(r);
+            }
+           
+        }
+        Comparator<VBlockingThread> comparator = Comparator.<VBlockingThread>comparingInt(m ->  m.getBlockedThreads().size()).reversed().thenComparing(m -> m.getBlockingThread().getName());
+        result.sort(comparator);
+        return result;
+    }
+
+    private Monitor findBlockingMonitor(Thread thread) 
+    {
+        List<Monitor> candidates = new ArrayList<>();
+        if(thread instanceof JavaThread)
+        {
+            JavaThread blockedThread = (JavaThread)thread;
+            if(blockedThread.getMonitors()!=null)
+                candidates.addAll(blockedThread.getMonitors()); //not sure if this is needed
+            Frame[] frames = blockedThread.getTrace().getFrames();
+            for (Frame frame : frames) {
+                if(frame.getMonitors()!=null)
+                {
+                    Arrays.stream(frame.getMonitors()).forEach(candidates::add);
+                    //only need the first frame really
+                    break;
+                }
+            }
+        }
+        return candidates.stream().filter(m -> m.getState()==MonitorState.WAITING_TO_LOCK || m.getState()==MonitorState.WAITING_TO_RE_LOCK).findFirst().orElse(null);
+    }  
+
 }
