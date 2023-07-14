@@ -15,7 +15,6 @@
     <el-dialog :visible.sync="threadTableVisible" width="60%" top="5vh">
       <thread :file="file" :id="selectedThreadId" :name="selectedThreadName" />
     </el-dialog>
-    <el-icon><SuccessFilled /></el-icon>
     <h4 v-if="treeData.length==0">
       <i style="color: green" class="el-icon-success"></i> No Threads are blocked <el-icon><CircleCheckFilled /></el-icon>
     </h4>
@@ -202,9 +201,22 @@ export default {
   font: 16px sans-serif;
 }
 
+.node:hover {
+  stroke: #007bff;
+  background-color: #007bff;
+  stroke-width: 1px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
 .link {
   fill: none;
   stroke: #ccc;
   stroke-width: 1px;
+}
+.link:hover {
+  fill: none;
+  stroke: black;
+  stroke-width: 2px;
 }
 </style>

@@ -25,6 +25,7 @@ Analyzing thread dump can help troubleshoot problems like thread leaks, deadlock
 ### Feature List
 
 - Basic Information
+- Blocked Thread Analysis
 - Thread Overview
 - Thread Group Overview
 - Java Monitor
