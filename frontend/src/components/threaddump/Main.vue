@@ -18,7 +18,7 @@
     </el-dialog>
 
     <el-dialog :visible.sync="threadTableVisible" width="60%" top="5vh">
-      <thread :file="file" :group-name="selectedGroupName" :type="selectedThreadType"/>
+      <thread :file="file" :group-name="selectedGroupName" :type="selectedThreadType" :state="selectedThreadState"/>
     </el-dialog>
 
     <el-alert
@@ -62,12 +62,12 @@
                   :data="threadStats"
                   :show-header="false"
                   row-key="key"
-                  :expand-row-keys="[ threadStats == null ? '' : threadStats[0].key]"
+                  :expand-row-keys="expandedThreadKeys"
                   stripe
                   :cell-style='cellStyle'>
           <el-table-column type="expand">
             <template slot-scope="scope">
-              <doughnut-chart :chart-data="scope.row.chartData" :options="chartOptions"/>
+              <doughnut-chart :chart-data="scope.row.chartData" :options="scopeChartOptions(scope.row)" />
             </template>
           </el-table-column>
 
@@ -164,8 +164,10 @@ export default {
 
       selectedGroupName: null,
       selectedThreadType: null,
+      selectedThreadState: null, 
       threadTableVisible: false,
-
+      
+      expandedThreadKeys: null,
       basicInfo: null,
       threadStats: null,
       threadGroupStats: null,
@@ -200,6 +202,17 @@ export default {
     }
   },
   methods: {
+    // creates a copy of chartOptions that has an action scoped to the given threadStats
+    scopeChartOptions(threadStats) {
+      let self = this;
+      let scopedChartOptions = { ...this.chartOptions };
+      // doesn't work for the total
+      if(null != threadStats.threadType) {
+        scopedChartOptions.onClick =  (e,data) =>  self.selectThreadState(threadStats.states[data[0]._index],threadStats.threadType);
+      }
+      return scopedChartOptions;
+    },
+
     sum(arr) {
       let s = 0;
       for (let i = 0; i < arr.length; i++) {
@@ -226,14 +239,23 @@ export default {
     selectThreadType(type) {
       this.selectedGroupName = null
       this.selectedThreadType = type
+      this.selectedThreadState = null
       this.threadTableVisible = true
     },
 
     selectThreadGroupName(name) {
-      this.selectedThreadType = null
       this.selectedGroupName = name
+      this.selectedThreadType = null
+      this.selectedThreadState = null
       this.threadTableVisible = true
-    }
+    },
+
+    selectThreadState(state, type) {
+      this.selectedGroupName = null
+      this.selectedThreadType = type;
+      this.selectedThreadState = state
+      this.threadTableVisible = true
+    },
   },
   mounted() {
     this.loading = true
@@ -347,6 +369,7 @@ export default {
         states: overview.states,
         counts: overview.threadStat.counts,
         icon: 'el-icon-s-data',
+        threadType: null,
         chartData: {
           labels: overview.states,
           datasets: [
@@ -357,6 +380,9 @@ export default {
           ]
         },
       })
+      //expand the first threadSummary row on the next tick
+      this.expandedThreadKeys = [this.threadStats[0].key]
+
       this.loading = false
     })
   }

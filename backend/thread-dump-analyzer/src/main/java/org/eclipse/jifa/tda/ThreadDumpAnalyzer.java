@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.util.CollectionUtil;
 import org.eclipse.jifa.common.util.PageViewBuilder;
 import org.eclipse.jifa.common.vo.PageView;
-import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.model.CallSiteTree;
@@ -47,7 +45,6 @@ import org.eclipse.jifa.tda.model.Monitor;
 import org.eclipse.jifa.tda.model.RawMonitor;
 import org.eclipse.jifa.tda.model.Snapshot;
 import org.eclipse.jifa.tda.model.Thread;
-import org.eclipse.jifa.tda.model.Trace;
 import org.eclipse.jifa.tda.parser.ParserFactory;
 import org.eclipse.jifa.tda.vo.Content;
 import org.eclipse.jifa.tda.vo.Overview;
@@ -55,8 +52,6 @@ import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
-
-import com.google.common.base.Optional;
 
 /**
  * Thread dump analyzer
@@ -188,9 +183,9 @@ public class ThreadDumpAnalyzer {
      * @param name   the thread name
      * @param type   the thread type
      * @param paging paging request
-     * @return the threads filtered by name and type
+     * @return the threads filtered by name, state and type
      */
-    public PageView<VThread> threads(String name, ThreadType type, PagingRequest paging) {
+    public PageView<VThread> threads(String name, ThreadType type, String threadState, PagingRequest paging) {
         List<Thread> threads = new ArrayList<>();
         CollectionUtil.forEach(t -> {
             if (type != null && t.getType() != type) {
@@ -199,10 +194,22 @@ public class ThreadDumpAnalyzer {
             if (StringUtils.isNotBlank(name) && !t.getName().contains(name)) {
                 return;
             }
+            if (StringUtils.isNotBlank(threadState) && !getThreadState(t).equals(threadState) ) {
+                return;
+            }
             threads.add(t);
         }, snapshot.getJavaThreads(), snapshot.getNonJavaThreads());
 
         return buildVThreadPageView(threads, paging);
+    }
+
+    private String getThreadState(Thread t) {
+        if (t instanceof JavaThread) {
+            JavaThread jt = (JavaThread)t;
+            if (jt.getJavaThreadState() != null)
+                return String.valueOf(jt.getJavaThreadState());
+        }
+        return String.valueOf(t.getOsThreadState());
     }
 
  /**

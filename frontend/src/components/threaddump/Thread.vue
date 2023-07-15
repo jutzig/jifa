@@ -57,7 +57,7 @@ import axios from "axios";
 import {threadDumpService} from "@/util";
 
 export default {
-  props: ['file', 'groupName', 'type', 'id'],
+  props: ['file', 'groupName', 'type', 'id', 'state'],
   data() {
     return {
       cellStyle: {padding: '8px'},
@@ -117,6 +117,9 @@ export default {
         }
         if (this.type) {
           params.type = this.type
+        }
+        if (this.state) {
+          params.state = this.state;
         }
         if (this.id) {
           params.id = this.id
@@ -189,12 +192,13 @@ export default {
 
   computed: {
     conditions() {
-      const {groupName, name, type, id} = this
+      const {groupName, name, type, id, state} = this
       return {
         groupName,
         name,
         type,
-        id
+        id,
+        state
       }
     }
   },

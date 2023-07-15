@@ -13,6 +13,7 @@
 package org.eclipse.jifa.worker.route.threaddump;
 
 import io.vertx.core.Promise;
+
 import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.vo.PageView;
 import org.eclipse.jifa.tda.ThreadDumpAnalyzer;
@@ -62,9 +63,10 @@ public class ThreadDumpRoute extends ThreadDumpBaseRoute {
                         @ParamKey("file") String file,
                         @ParamKey(value = "name", mandatory = false) String name,
                         @ParamKey(value = "type", mandatory = false) ThreadType type,
+                        @ParamKey(value = "state", mandatory = false) String state,
                         PagingRequest paging) {
         ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
-        promise.complete(analyzer.threads(name, type, paging));
+        promise.complete(analyzer.threads(name, type, state, paging));
     }
 
     @RouteMeta(path = "/threadsOfGroup")
@@ -114,6 +116,11 @@ public class ThreadDumpRoute extends ThreadDumpBaseRoute {
         promise.complete(analyzer.threadsByMonitor(id, state, paging));
     }
 
+    /**
+     * returns a list of threads that are blocking other threads
+     * @param promise
+     * @param file file id of the thread dump
+     */
     @RouteMeta(path = "/threadsBlocking")
     public void threadsBlocking(Promise<List<VBlockingThread>> promise, @ParamKey("file") String file) {
         ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
