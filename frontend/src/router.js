@@ -24,6 +24,8 @@ import GCLogCompare from "@/components/gclog/GCLogCompare";
 
 import threadDump from "./components/threaddump/ThreadDump"
 
+import threadDumpCompare from "./components/threaddump/ThreadDumpCompare"
+ 
 import auth from "./components/auth/Auth"
 
 import axios from "axios"
@@ -97,6 +99,12 @@ const routes = [
     name: 'gcLogCompare',
     path: "/gcLogCompare",
     component: GCLogCompare,
+    props: (route) => ({...route.query})
+  },
+  {
+    name: 'threadDumpCompare',
+    path: "/threadDumpCompare",
+    component: threadDumpCompare,
     props: (route) => ({...route.query})
   },
   {

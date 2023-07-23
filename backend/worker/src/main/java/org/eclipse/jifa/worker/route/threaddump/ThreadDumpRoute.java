@@ -25,6 +25,7 @@ import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
+import org.eclipse.jifa.worker.route.MappingPrefix;
 import org.eclipse.jifa.worker.route.ParamKey;
 import org.eclipse.jifa.worker.route.RouteMeta;
 import org.eclipse.jifa.worker.support.Analyzer;
@@ -33,6 +34,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+
+@MappingPrefix("/:file")
 public class ThreadDumpRoute extends ThreadDumpBaseRoute {
 
     @RouteMeta(path = "/overview")
