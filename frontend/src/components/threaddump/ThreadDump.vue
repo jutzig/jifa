@@ -18,6 +18,7 @@
           <view-menu subject="analysisResult"
                      :file="file"
                      :analysisState="analysisState"
+                     @threadDumpCompareConfig="showCompareConfig"
                      type="THREAD_DUMP"/>
         </el-header>
     
@@ -37,6 +38,26 @@
             </b-card>
           </div>
     
+          <el-dialog
+            :title="$t('jifa.threadDump.threadDumpCompare')"
+            width="700px"
+            :visible.sync="compareConfigVisible"
+            :close-on-click-modal=false
+            append-to-body>
+          <el-form ref="compareForm" :model="compareConfigModel" label-width="200px" size="medium"
+                   label-position="right"
+                   style="margin-top: 10px" status-icon :show-message=false :rules="compareRule">
+            <el-form-item v-for="i in 3" :label="'Dump '+i" :prop="'file'+(i-1)" :key="i">
+              <el-input type="textarea" v-model="compareConfigModel['file' + (i-1)]" autosize resize="none"
+                        style="width: 400px" :placeholder="$t('jifa.threadDump.threadDumpFilePlaceholder')"/>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="doCompare()">{{ $t('jifa.confirm') }}</el-button>
+            </el-form-item>
+          </el-form>
+        </el-dialog>
+
+
           <el-container v-if="analysisState === 'SUCCESS'" style="height: 100%">
             <el-aside width="200px">
               <div style="font-size: 16px; height: 100%;">
@@ -68,6 +89,7 @@ import ViewMenu from "../menu/ViewMenu";
 import MainPage from "./Main";
 import axios from "axios";
 import {threadDumpService} from "@/util";
+import {getUrlParams} from "@/components/gclog/GCLogUtil";
 
 export default {
   props: ['file'],
@@ -81,6 +103,19 @@ export default {
       message: '',
       progress: 0,
       pollingInternal: 500,
+      compareConfigVisible: false,
+      compareConfigModel: {},
+      compareRule: {
+          file0: [
+            {required: true, trigger: 'blur'}
+          ],
+          file1: [
+            {required: true, trigger: 'blur'}
+          ],
+          file2: [
+            {required: false, trigger: 'blur'}
+          ],
+        },
     }
   },
   methods: {
@@ -129,9 +164,41 @@ export default {
         this.pollProgressOfAnalysis();
       })
     },
-    showDetail(id) {
-       //TODO: expand this
-    }
+    showCompareConfig() {
+        this.compareConfigModel = {
+          file0: this.file,
+          file1: null,
+          file2: null,
+        }
+        this.compareConfigVisible = true
+      },
+      doCompare() {
+        this.$refs['compareForm'].validate((valid) => {
+          if (valid) {
+            const query = {
+              files: []
+            }
+            for (let i = 0; i <= 2; i++) {
+              const file = this.compareConfigModel["file" + i]
+              if(file==null || file=='') {
+                continue
+              }
+              if (file.indexOf('/threadDump?') >= 0 && file.indexOf('file=') >= 0) {
+                const params = getUrlParams(file);
+                query.files.push(params.file)
+              } else {
+                query.files.push(file)
+              }
+            }
+            const url = this.$router.resolve({
+              name: 'threadDumpCompare',
+              query: query
+            })
+            window.open(url.href)
+            this.compareConfigVisible = false
+          }
+        })
+      }
   },
   mounted() {
     this.analyzeThreadDump();

@@ -65,6 +65,10 @@ export function threadDumpService(file, api) {
   return SERVICE_PREFIX + '/thread-dump/' + file + '/' + api;
 }
 
+export function threadDumpBase() {
+  return SERVICE_PREFIX + '/thread-dump/';
+}
+
 export function matchSearch(data,val){
   let temp = [];
   for(let index in data){
