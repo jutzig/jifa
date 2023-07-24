@@ -53,12 +53,33 @@
               </div>
              </el-aside>
               <el-main style="padding: 20px; height: 100%;">
-                <el-container style="width: 80%;;">
-                  <el-card header="Thread Compare" style="width: 100%;">
-                    <line-chart :chart-data="threadsChartData.data" :options="threadsChartOptions" style="width: 800px;"/>
+                <el-container>
+                  <el-card header="Thread State Compare" style="width: 100%;">
+                    <div>
+                      <el-row :gutter="10">
+                        <el-col :span="10">
+                          <table style="width: 100%;" class="thread-state-table">
+                            <thead>
+                              <th>Thread State</th>
+                              <th v-for="(fileInfo, index) in comparison.fileInfos" ><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></th>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(state, stateIndex) in comparison.overviews[0].javaStates" >
+                                    <td>{{state}}</td>
+                                    <td v-for="(overview, index) in comparison.overviews" style="text-align: right;" >
+                                      <span v-if="index>0 && computeThreadCountDiff(comparison, index, stateIndex) < 0" class="data-negative">( {{ computeThreadCountDiff(comparison, index, stateIndex) }} ) </span>
+                                      <span v-if="index>0 && computeThreadCountDiff(comparison, index, stateIndex) > 0" class="data-positive">( +{{ computeThreadCountDiff(comparison, index, stateIndex) }} ) </span>                                      
+                                      <span>{{overview.javaThreadStat.javaCounts[stateIndex]}}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                          </table>
+                        </el-col>
+                        <el-col :span="12"><line-chart :chart-data="threadsChartData.data" :options="threadsChartOptions" :width='800' :height='400' /></el-col>
+                      </el-row>
+                    </div>
                   </el-card>
                 </el-container>
-               <!-- <main-page :file="files" style="width: 90%; left: 10%;" id="navTop"/> -->
               </el-main>
             </el-container>
           </el-main>
@@ -95,6 +116,7 @@
         ],
         analysisState: 'NOT_STARTED',
         progressState: 'info',
+        loading: true,
         message: '',
         progress: 0,
         pollingInternal: 500,
@@ -107,7 +129,8 @@
           }
         },
         threadsChartOptions: {
-          responsive: true,
+          responsive: false,
+          maintainAspectRatio: false,
           plugins: {
             title: {
               display: true,
@@ -149,7 +172,7 @@
         
           //create chart data
           this.createThreadStateChartData(summary)
-
+          this.loading = false
           this.analysisState = "SUCCESS"
         })
         
@@ -158,7 +181,7 @@
         let self = this;
         self.threadsChartData.data.labels = []
         summary.fileInfos.forEach(fileInfo => {
-          self.threadsChartData.data.labels.push(fileInfo.name)
+          self.threadsChartData.data.labels.push(fileInfo.originalName)
         })
         self.threadsChartData.data.datasets = []
         //one dataset per thread state kind, one data point per dump
@@ -177,6 +200,15 @@
           })
         }
       },
+
+      computeThreadCountDiff(comparison, overviewIndex, stateIndex) {
+        let value = comparison.overviews[overviewIndex].javaThreadStat.javaCounts[stateIndex]
+        if (overviewIndex==0)
+          return value
+        let baseValue = comparison.overviews[0].javaThreadStat.javaCounts[stateIndex]
+        let diff = value - baseValue
+        return diff
+      },
     },
     
     mounted() {
@@ -185,4 +217,43 @@
     }
   }
   </script>
-  
+  <style>
+  .data-positive {
+    color: green;
+    font-weight: bold;
+  }
+
+  .data-negative {
+    color: red;
+    font-weight: bold;
+  }
+
+  .thread-state-table {
+    font-size: 0.9rem;
+  }
+
+  .thread-state-table tr{
+    font-size: 0.9rem;
+    border: 1px solid black;
+	  padding: 3px;
+  }
+
+  .thread-state-table th{
+    font-size: 0.9rem;
+    border: 1px solid black;
+	  padding: 3px;
+    text-align: center;
+  }
+
+  .thread-state-table td{
+    font-size: 0.9rem;
+    border: 1px solid black;
+	  padding: 3px;
+  }
+
+  thead {
+	  background-color: #d2d7e2;
+	  font-size: 1rem;
+  }
+
+  </style>
