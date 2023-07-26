@@ -38,23 +38,21 @@
             </div>
       
             <el-container v-if="analysisState === 'SUCCESS'" style="height: 100%">
-              <el-aside width="200px">
+              <el-aside width="250px">
                 <div style="font-size: 16px; height: 100%;">
-                <el-card :header="$t('jifa.threadDump.navigation')" style="height: 100%;">
-                  <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDump.navToTop') }}</a></div>
+                <el-card :header="$t('jifa.threadDumpCompare.navigation')" style="height: 100%;">
+                  <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDumpCompare.navToTop') }}</a></div>
+                  <div class="nav-item" v-for="(fileInfo, index) in comparison.fileInfos" ><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></div>
                   <el-divider/>
-                  <div class="nav-item"><a href="#overview">{{ $t('jifa.threadDump.basicInfo') }}</a></div>
-                  <div class="nav-item"><a href="#blockedThreads">{{ $t('jifa.threadDump.blockedThreadsLabel') }}</a></div>
-                  <div class="nav-item"><a href="#threadSummary">{{ $t('jifa.threadDump.threadSummary') }}</a></div>
-                  <div class="nav-item"><a href="#threadGroupSummary">{{ $t('jifa.threadDump.threadGroupSummary') }}</a></div>
-                  <div class="nav-item"><a href="#monitors">{{ $t('jifa.threadDump.monitors') }}</a></div>
-                  <div class="nav-item"><a href="#callSiteTree">{{ $t('jifa.threadDump.callSiteTree') }}</a></div>
+                  <div class="nav-item"><a href="#stateCompare">{{ $t('jifa.threadDumpCompare.stateCompare') }}</a></div>
+                  <div class="nav-item"><a href="#threadGroupCompare">{{ $t('jifa.threadDumpCompare.threadGroupCompare') }}</a></div>
                 </el-card>
               </div>
              </el-aside>
-              <el-main style="padding: 20px; height: 100%;">
+              <el-main style="padding: 20px; height: 100%;" id="navTop">
                 <el-container>
-                  <el-card header="Thread State Compare" style="width: 100%;">
+                  <el-card :header="$t('jifa.threadDumpCompare.stateCompare')" style="width: 100%;" id="stateCompare">
+                    <span> {{ $t('jifa.threadDumpCompare.stateCompareDescription') }}</span>
                     <div>
                       <el-row :gutter="10">
                         <el-col :span="10">
@@ -80,6 +78,14 @@
                     </div>
                   </el-card>
                 </el-container>
+                <el-container>
+                  <el-card :header="$t('jifa.threadDumpCompare.threadGroupCompare')" style="width: 100%;" id="threadGroupCompare">
+                    <span>{{ $t('jifa.threadDumpCompare.threadGroupCompareDescription') }}</span>
+                    <div>
+                        <el-col :span="20"><bar-chart :chart-data="threadGroupChartData" :options="threadGroupChartOptions" :width='1000' :height='400' /></el-col>
+                    </div>
+                  </el-card>
+                </el-container>
               </el-main>
             </el-container>
           </el-main>
@@ -93,12 +99,14 @@
   import {threadDumpService} from "@/util";
   import {threadDumpBase} from "@/util";
   import LineChart from '../charts/LineChart'
+  import BarChart from '../charts/BarChart'
     
 
   export default {
     components: {
       LineChart,
-      ViewMenu
+      BarChart,
+      ViewMenu,
     },
     data() {
       return {
@@ -132,10 +140,6 @@
           responsive: false,
           maintainAspectRatio: false,
           plugins: {
-            title: {
-              display: true,
-              text: "test title"
-            },
             tooltip: {
               mode: 'index'
             },
@@ -153,6 +157,13 @@
               stacked: true,
             }]
           }
+        },
+        threadGroupStats: [],
+        threadGroupChartData: [],
+        threadGroupChartOptions: {
+          responsive: false,
+          maintainAspectRatio: false,
+          parsing: true,
         },
  
       }
@@ -172,11 +183,48 @@
         
           //create chart data
           this.createThreadStateChartData(summary)
+          this.createThreadGroupStats(summary)
           this.loading = false
           this.analysisState = "SUCCESS"
         })
         
       },
+      createThreadGroupStats(summary) {
+        //creates bar chart groups for the largest thread groups (based on the first dump)  
+        let firstStats = summary.overviews[0].threadGroupStat
+        let candidates = []
+
+        for (let k in firstStats) {
+          candidates.push({
+            key: k,
+            value: this.sum(summary.overviews[0].threadGroupStat[k].counts),
+          })
+        }
+        candidates.sort((i, j) => j.value - i.value)
+        candidates = candidates.slice(0,8) //only the top most interesting
+       
+        this.threadGroupChartData = {     
+          //the labels are names of the thread groups we will. Each thread group will be a group of bar charts (one bar per dump)                     
+          labels: candidates.map(candidate => candidate.key),
+          datasets: []
+        }
+
+        //for each dump, we need to private a data[] containing as many int values, as there is thread groups
+        summary.overviews.forEach( (overview, index) => {
+          let groupData = []
+          candidates.forEach(threadGroup => {
+            let currentStat = overview.threadGroupStat[threadGroup.key]
+            groupData.push(this.sum(currentStat.counts))
+          });
+          this.threadGroupChartData.datasets.push({
+            backgroundColor: this.color[index],
+            label: summary.fileInfos[index].originalName,
+            data: groupData
+          })
+        });
+
+      },
+
       createThreadStateChartData(summary) {
         let self = this;
         self.threadsChartData.data.labels = []
@@ -208,6 +256,14 @@
         let baseValue = comparison.overviews[0].javaThreadStat.javaCounts[stateIndex]
         let diff = value - baseValue
         return diff
+      },
+
+      sum(arr) {
+        let s = 0;
+        for (let i = 0; i < arr.length; i++) {
+          s += arr[i]
+        }
+        return s
       },
     },
     

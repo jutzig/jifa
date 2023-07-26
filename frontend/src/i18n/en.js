@@ -461,6 +461,16 @@ exports.default = {
       blockedThreads: {
         title: "{blocker} is blocking one other thread | {blocker} is blocking {count} other threads"
       }
-    }
+    },
+
+    threadDumpCompare: {
+      title: "Thread Dump Compare",
+      navigation: "Navigation",
+      navToTop: "Top",
+      stateCompare: "Thread State Compare",
+      stateCompareDescription: "Displays the distribution of Java thread states across dumps",
+      threadGroupCompare: "Thread Group Compare",
+      threadGroupCompareDescription: "If the amount of threads per group changes a lot between dumps, that group may be worth investigating",
+    },
   }
 };
