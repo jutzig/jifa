@@ -460,7 +460,9 @@ exports.default = {
 
       blockedThreads: {
         title: "{blocker} is blocking one other thread | {blocker} is blocking {count} other threads"
-      }
+      },
+      threadDumpCompare: 'Compare Thread Dumps',
+      threadDumpFilePlaceholder: 'Fill with the URL of the analyis page of another thread dump'
     },
 
     threadDumpCompare: {

@@ -18,7 +18,7 @@
             <view-menu subject="analysisResult"
                        :file="files"
                        :analysisState="analysisState"
-                       type="THREAD_DUMP"/>
+                       type="THREAD_DUMP_COMPARE"/>
           </el-header>
       
           <el-main style="padding-top: 0">
@@ -42,7 +42,7 @@
                 <div style="font-size: 16px; height: 100%;">
                 <el-card :header="$t('jifa.threadDumpCompare.navigation')" style="height: 100%;">
                   <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDumpCompare.navToTop') }}</a></div>
-                  <div class="nav-item" v-for="(fileInfo, index) in comparison.fileInfos" ><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></div>
+                  <div class="nav-item" v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></div>
                   <el-divider/>
                   <div class="nav-item"><a href="#stateCompare">{{ $t('jifa.threadDumpCompare.stateCompare') }}</a></div>
                   <div class="nav-item"><a href="#threadGroupCompare">{{ $t('jifa.threadDumpCompare.threadGroupCompare') }}</a></div>
@@ -59,12 +59,12 @@
                           <table style="width: 100%;" class="thread-state-table">
                             <thead>
                               <th>Thread State</th>
-                              <th v-for="(fileInfo, index) in comparison.fileInfos" ><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></th>
+                              <th v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></th>
                             </thead>
                             <tbody>
-                                <tr v-for="(state, stateIndex) in comparison.overviews[0].javaStates" >
+                                <tr v-for="(state, stateIndex) in comparison.overviews[0].javaStates" :key="stateIndex">
                                     <td>{{state}}</td>
-                                    <td v-for="(overview, index) in comparison.overviews" style="text-align: right;" >
+                                    <td v-for="(overview, index) in comparison.overviews" style="text-align: right;" :key="index" >
                                       <span v-if="index>0 && computeThreadCountDiff(comparison, index, stateIndex) < 0" class="data-negative">( {{ computeThreadCountDiff(comparison, index, stateIndex) }} ) </span>
                                       <span v-if="index>0 && computeThreadCountDiff(comparison, index, stateIndex) > 0" class="data-positive">( +{{ computeThreadCountDiff(comparison, index, stateIndex) }} ) </span>                                      
                                       <span>{{overview.javaThreadStat.javaCounts[stateIndex]}}</span>
@@ -96,7 +96,6 @@
   <script>
   import ViewMenu from "../menu/ViewMenu";
   import axios from "axios";
-  import {threadDumpService} from "@/util";
   import {threadDumpBase} from "@/util";
   import LineChart from '../charts/LineChart'
   import BarChart from '../charts/BarChart'
@@ -291,25 +290,25 @@
   .thread-state-table tr{
     font-size: 0.9rem;
     border: 1px solid black;
-	  padding: 3px;
+    padding: 3px;
   }
 
   .thread-state-table th{
     font-size: 0.9rem;
     border: 1px solid black;
-	  padding: 3px;
+    padding: 3px;
     text-align: center;
   }
 
   .thread-state-table td{
     font-size: 0.9rem;
     border: 1px solid black;
-	  padding: 3px;
+    padding: 3px;
   }
 
   thead {
-	  background-color: #d2d7e2;
-	  font-size: 1rem;
+    background-color: #d2d7e2;
+    font-size: 1rem;
   }
 
   </style>
