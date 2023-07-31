@@ -180,7 +180,10 @@ export default {
             }
             for (let i = 0; i <= 2; i++) {
               const file = this.compareConfigModel["file" + i]
-              if (file != null && file.indexOf('/threadDump?') >= 0 && file.indexOf('file=') >= 0) {
+              if(file==null || file=='') {
+                continue
+              }
+              if (file.indexOf('/threadDump?') >= 0 && file.indexOf('file=') >= 0) {
                 const params = getUrlParams(file);
                 query.files.push(params.file)
               } else {
