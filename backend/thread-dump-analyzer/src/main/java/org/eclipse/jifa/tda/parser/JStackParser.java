@@ -97,6 +97,7 @@ public class JStackParser implements Parser {
     static final class PATTERNS {
         static String TIME_FORMAT;
         static Pattern TIME;
+        static Pattern PID;
 
         static Pattern VERSION;
 
@@ -166,6 +167,8 @@ public class JStackParser implements Parser {
             switch (element) {
                 case TIME:
                     return TIME;
+                case PID:
+                    return PID;
                 case VERSION:
                     return VERSION;
                 case JNI_GLOBAL_REFS:
@@ -204,6 +207,7 @@ public class JStackParser implements Parser {
         Snapshot parse() throws Exception {
             listener.beginTask("Parsing thread dump", 100);
             listener.subTask("Parsing timestamp and version");
+            parsePid(); //sometimes a dump start with <pid>:
             parseTimeStamp();
             parseVersion();
             listener.worked(1);
@@ -274,6 +278,12 @@ public class JStackParser implements Parser {
             parseByElementPattern(Element.TIME, m -> {
                 long ts = new SimpleDateFormat(PATTERNS.TIME_FORMAT).parse(input.currentLine()).getTime();
                 snapshot.setTimestamp(ts);
+            }, false);
+        }
+
+        void parsePid() throws Exception {
+            parseByElementPattern(Element.PID, m -> {
+                snapshot.setPid(Integer.parseInt(m.group(1)));
             }, false);
         }
 
@@ -789,6 +799,8 @@ public class JStackParser implements Parser {
         enum Element {
 
             TIME("dump time"),
+
+            PID("pid"),
 
             VERSION("vm version"),
 
