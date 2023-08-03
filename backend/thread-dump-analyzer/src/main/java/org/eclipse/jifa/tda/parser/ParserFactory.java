@@ -19,7 +19,15 @@ public class ParserFactory {
 
     private static final Parser DEFAULT = new SerDesParser(new JStackParser());
 
+    //ToDo: hook
+    private static final Parser BIS_PARSER = new SerDesParser(new BisParser());
+
     public static Parser buildParser(Path path) {
-        return DEFAULT;
+
+        //ToDo: hook
+        if(BIS_PARSER.canParse(path))
+            return BIS_PARSER;
+        else
+            return DEFAULT;
     }
 }

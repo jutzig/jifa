@@ -14,6 +14,7 @@
 package org.eclipse.jifa.tda.parser;
 
 import org.apache.commons.lang.StringUtils;
+import org.checkerframework.checker.units.qual.degrees;
 import org.eclipse.jifa.common.listener.ProgressListener;
 import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.MonitorState;
@@ -51,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JStackParser implements Parser {
+public class BisParser implements Parser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JStackParser.class);
 
@@ -96,13 +97,23 @@ public class JStackParser implements Parser {
 
     @Override
     public boolean canParse(Path path) {
-        return true;
+        // BIS 652 thread dumps start with "Thread Dump for PID", so if we detect this, we assume we can go on
+        try(Input input = new Input(path)) {
+            String firstLine = input.readLine();
+            if(firstLine.startsWith("Thread Dump for PID")) {
+                LOGGER.info("BIS Parser: can parse " + path.toString());
+                return true;
+            }
+            LOGGER.info("BIS Parser: can NOT parse " + path.toString());
+            return false;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     static final class PATTERNS {
         static String TIME_FORMAT;
         static Pattern TIME;
-        static Pattern PID;
 
         static Pattern VERSION;
 
@@ -132,6 +143,9 @@ public class JStackParser implements Parser {
         static String NONE;
         static Pattern LOCKED_SYNCHRONIZER;
 
+        static Pattern LOCKED_SYNCHRONIZER_HEADER;
+        static Pattern LOCKED_SYNCHRONIZER_LINE;
+
         static String DEAD_LOCK_HEAD;
         static Pattern DEAD_LOCK_THREAD;
         static Pattern DEAD_LOCK_WAITING_TO_LOCK_MONITOR;
@@ -140,9 +154,11 @@ public class JStackParser implements Parser {
         static String DEAD_LOCK_STACK_HEAD;
         static Pattern DEAD_FOUND;
 
+        static Pattern ANYTHING;
+
         static {
             try {
-                String fn = "jstack_pattern.properties";
+                String fn = "bis_pattern.properties";
                 Properties ps = new Properties();
                 ps.load(PATTERNS.class.getClassLoader().getResourceAsStream(fn));
                 Field[] fields = PATTERNS.class.getDeclaredFields();
@@ -172,14 +188,14 @@ public class JStackParser implements Parser {
             switch (element) {
                 case TIME:
                     return TIME;
-                case PID:
-                    return PID;
                 case VERSION:
                     return VERSION;
                 case JNI_GLOBAL_REFS:
                     return JNI_GLOBAL_REFS;
                 case NON_JAVA_THREAD:
                     return NO_JAVA_THREAD;
+                case ANYTHING:
+                    return ANYTHING;
                 default:
                     throw new ParserException("Should not reach here");
             }
@@ -212,9 +228,13 @@ public class JStackParser implements Parser {
         Snapshot parse() throws Exception {
             listener.beginTask("Parsing thread dump", 100);
             listener.subTask("Parsing timestamp and version");
-            parsePid(); //sometimes a dump start with <pid>:
+            skipOptionalLine(Element.ANYTHING); //PID
             parseTimeStamp();
-            parseVersion();
+            skipOptionalLine(Element.ANYTHING); // Thread count
+            skipOptionalLine(Element.ANYTHING); // Thread peak count
+            skipOptionalLine(Element.ANYTHING); // Deadlocked
+            skipOptionalLine(Element.ANYTHING); // Thread Stack Traces
+
             listener.worked(1);
 
             skipSMR();
@@ -281,21 +301,15 @@ public class JStackParser implements Parser {
 
         void parseTimeStamp() throws Exception {
             parseByElementPattern(Element.TIME, m -> {
-                long ts = new SimpleDateFormat(PATTERNS.TIME_FORMAT).parse(input.currentLine()).getTime();
+                long ts = new SimpleDateFormat(PATTERNS.TIME_FORMAT).parse(m.group("time")).getTime();
                 snapshot.setTimestamp(ts);
             }, false);
         }
 
-        void parsePid() throws Exception {
-            parseByElementPattern(Element.PID, m -> {
-                snapshot.setPid(Integer.parseInt(m.group(1)));
-            }, false);
-        }
-
-        void parseVersion() throws Exception {
-            parseByElementPattern(Element.VERSION, m -> {
-                snapshot.setVmInfo(m.group("info"));
-            }, false);
+        void skipOptionalLine(Element element) throws Exception {
+            parseByElementPattern(element, m -> {
+                // we simply ignore this
+            }, false); // it is optional
         }
 
         void parseJNIGlobalHandles() throws Exception {
@@ -425,11 +439,6 @@ public class JStackParser implements Parser {
             String name = m.group("name");
             thread.setName(symbols.add(name));
             thread.setType(typeOf(name, thread instanceof JavaThread));
-            thread.setOsPriority(Integer.parseInt(m.group("osPriority")));
-            thread.setCpu(Converter.str2TimeMillis(m.group("cpu")));
-            thread.setElapsed(Converter.str2TimeMillis(m.group("elapsed")));
-            thread.setTid(Long.decode(m.group("tid")));
-            thread.setNid(Long.decode(m.group("nid")));
             thread.setOsThreadState(OSTreadState.getByDescription(m.group("state").trim()));
         }
 
@@ -444,10 +453,10 @@ public class JStackParser implements Parser {
                 }
 
                 if (line.startsWith("\"")) {
-                    if (!line.endsWith("]")) {
+                 //   if (!line.endsWith("]")) {
                         // not a java thread
-                        break;
-                    }
+                   //     break;
+                   // }
                     RawJavaThread rjt = new RawJavaThread();
                     rjt.contents.add(line);
                     rjt.lineStart = input.lineNumber();
@@ -676,8 +685,8 @@ public class JStackParser implements Parser {
                             throw new ParserException("Illegal locked line: " + line);
                         }
                         monitors.add(assembleMonitor(thread, !deadLockThread, MonitorState.LOCKED,
-                                Long.decode(m.group("address")),
-                                m.group("isClass") != null,
+                                Long.decode("0x" + m.group("address")),
+                                true,//m.group("isClass") != null,
                                 symbolPool.add(m.group("class"))));
                     } else if (line.startsWith(MonitorState.WAITING_TO_LOCK.prefix())) {
                         checkLastFrameNotNull(last, line);
@@ -742,12 +751,26 @@ public class JStackParser implements Parser {
                                     concurrentLocks.toArray(new ConcurrentLock[0]));
                         }
                         break;
+                    } else if (line.startsWith("Locked")) {
+                        m = PATTERNS.LOCKED_SYNCHRONIZER_HEADER.matcher(line);
+                        if (!m.matches()) {
+                            throw new ParserException("Illegal java frame: " + line);
+                        }
+                        int count = Integer.parseInt(m.group("count"));
+                        for(int j=0; j < count; j++) {
+                            i++;
+                            line = stackTraces.get(i);
+                            m = PATTERNS.LOCKED_SYNCHRONIZER_LINE.matcher(line);
+                            if (!m.matches()) {
+                                throw new ParserException("Illegal java frame: " + line);
+                            }
+                            System.out.println(m.group("reference"));
+                        }
                     } else {
                         throw new ParserException("Unrecognized line: " + line);
                     }
                 }
             }
-
             if (last != null) {
                 if (!monitors.isEmpty()) {
                     last.setMonitors(monitors.toArray(new Monitor[0]));
@@ -774,21 +797,23 @@ public class JStackParser implements Parser {
                 thread.setLineStart(rjt.lineStart);
                 thread.setLineEnd(rjt.lineEnd);
                 thread.setJid(Long.parseLong(m.group("id")));
-                thread.setDaemon(m.group("daemon") != null);
-                thread.setPriority(Integer.parseInt(m.group("priority")));
-                thread.setLastJavaSP(Long.decode(m.group("lastJavaSP")));
 
+                String lock = m.group("lock");
                 // java thread state
-                line = contents.get(1);
-                m = PATTERNS.JAVA_STATE.matcher(line);
-                if (!m.matches()) {
-                    throw new ParserException("Illegal java thread state: " + line);
+                String state = m.group("state");
+                if("TIMED_WAITING".equals(state) || "WAITING".equals(state)) {
+                    if(lock == null) {
+                        state += " (parking)";
+                    }
+                    else {
+                        state += " (on object monitor)";
+                    }
                 }
-                thread.setJavaThreadState(JavaThreadState.getByDescription(m.group("state")));
+                thread.setJavaThreadState(JavaThreadState.getByDescription(state));
 
                 if (contents.size() > 2 && thread.getType() == ThreadType.JAVA /* skip jit */) {
                     // trace
-                    Trace trace = parseStackTrace(thread, false, contents.subList(2, contents.size()));
+                    Trace trace = parseStackTrace(thread, false, contents.subList(1, contents.size()));
                     snapshot.getCallSiteTree().add(trace);
                     thread.setTrace(snapshot.getTraces().add(trace));
                 }
@@ -803,9 +828,9 @@ public class JStackParser implements Parser {
 
         enum Element {
 
-            TIME("dump time"),
+            ANYTHING("BIS lines to skip"),
 
-            PID("pid"),
+            TIME("dump time"),
 
             VERSION("vm version"),
 
