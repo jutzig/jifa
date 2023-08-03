@@ -18,7 +18,7 @@
     <h4 v-if="treeData.length==0">
       <i style="color: green" class="el-icon-success"></i> No Threads are blocked <el-icon><CircleCheckFilled /></el-icon>
     </h4>
-    <span v-for="(item, index) in treeData">
+    <span v-for="(item, index) in treeData" v-bind:key="index">
       <h4 style="margin-top: 15px; margin-bottom: 15px;"><i style="color: red" class="el-icon-warning"></i> {{$tc('jifa.threadDump.blockedThreads.title', item.children.length, { count: item.children.length, blocker: item.name })}}</h4>
       <svg :cell="index" width="400" height="220">
         <g transform="translate(5, 5)">
@@ -32,10 +32,8 @@
 
 <script>
 import axios from 'axios'
-import nextTick from 'vue'
 import { threadDumpService } from '@/util'
 import Thread from "@/components/threaddump/Thread";
-import { frameToString, monitorsToStrings } from "@/components/threaddump/util"
 import * as d3 from "d3";
 
 export default {
@@ -135,7 +133,7 @@ export default {
       // append the svg object to the body of the page
       // appends a 'group' element to 'svg'
       // moves the 'group' element to the top left margin
-      const svg = d3.select("svg[cell=\'" + index + "\']")
+      const svg = d3.select("svg[cell='" + index + "']")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom),
         g = svg.append("g")
@@ -143,7 +141,7 @@ export default {
             "translate(" + margin.left + "," + margin.top + ")");
 
       // adds the links between the nodes
-      const link = g.selectAll(".link")
+      g.selectAll(".link")
         .data(nodes.descendants().slice(1))
         .enter().append("path")
         .attr("class", "link")

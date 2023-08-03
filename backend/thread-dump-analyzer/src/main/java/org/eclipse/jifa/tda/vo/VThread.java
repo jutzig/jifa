@@ -25,4 +25,9 @@ public class VThread {
     private int id;
 
     private String name;
+
+    /** time in ms, null for unknown */
+    private Double elapsed;
+    /** cpu consumption time in ms, null for unknown */
+    private Double cpu;
 }

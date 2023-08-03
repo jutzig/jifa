@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jifa.common.cache.Cacheable;
@@ -171,12 +172,20 @@ public class ThreadDumpAnalyzer {
     }
 
     private PageView<VThread> buildVThreadPageView(List<Thread> threads, PagingRequest paging) {
-        return PageViewBuilder.build(threads, paging, thread -> {
-            VThread vThread = new VThread();
-            vThread.setId(thread.getId());
-            vThread.setName(thread.getName());
-            return vThread;
-        });
+        return PageViewBuilder.build(threads, paging, this::convertToVThread);
+    }
+
+    private VThread convertToVThread(Thread thread) {
+        VThread vThread = new VThread();
+        vThread.setId(thread.getId());
+        vThread.setName(thread.getName());
+        if(thread.getElapsed()>0) {
+            vThread.setElapsed(thread.getElapsed());
+        }
+        if(thread.getCpu()>0) {
+            vThread.setCpu(thread.getCpu());
+        }
+        return vThread;
     }
 
     /**
@@ -357,8 +366,8 @@ public class ThreadDumpAnalyzer {
             if(!blockedThreads.isEmpty() && blockingThread!=null)
             {
                 VBlockingThread r = new VBlockingThread();
-                r.setBlockedThreads(blockedThreads.stream().map(t -> new VThread(t.getId(), t.getName())).collect(Collectors.toList()));
-                r.setBlockingThread(new VThread(blockingThread.getId(), blockingThread.getName()));
+                r.setBlockedThreads(blockedThreads.stream().map(this::convertToVThread).collect(Collectors.toList()));
+                r.setBlockingThread(convertToVThread(blockingThread));
                 Monitor mon = findBlockingMonitor(blockedThreads.get(0));
                 if(mon!=null) {
                     r.setHeldLock(new VMonitor(mon.getRawMonitor().getId(), mon.getRawMonitor().getAddress(),mon.getRawMonitor().isClassInstance(), mon.getRawMonitor().getClazz(), mon.getState()));
@@ -369,6 +378,46 @@ public class ThreadDumpAnalyzer {
         }
         Comparator<VBlockingThread> comparator = Comparator.<VBlockingThread>comparingInt(m ->  m.getBlockedThreads().size()).reversed().thenComparing(m -> m.getBlockingThread().getName());
         result.sort(comparator);
+        return result;
+    }
+
+    /**
+     * creates a list of the top most CPU consuming threads
+     * @param type only include threads of the given type. All threads will be considered if type is <code>null</code>
+     * @param max the max amount of threads to return. If max is <code>-1</code> all threads will be returned
+     * @return list of CPU consuming threads from most expensive, to least expensive
+     */
+    public List<VThread> cpuConsumingThreads(ThreadType type, int max) {
+        Stream<Thread> stream = snapshot.getThreadMap().values().stream().filter(t -> type == null || t.getType()==type);
+        stream = stream.sorted(Comparator.comparingDouble(Thread::getCpu).reversed()).limit(max < 0 ? Integer.MAX_VALUE : max);
+        return stream.map(this::convertToVThread).collect(Collectors.toList());
+    } 
+
+    /**
+     * computes which threads consumed the most CPU between 2 thread dumps
+     * @param other the other (later) thread dump result
+     * @param max the maximum amount of threads to return (-1 for unlimited)
+     * @return a list of the top cpu consuming threads between both dumps
+     */
+    public List<VThread> cpuConsumingThreadsCompare(ThreadDumpAnalyzer other, int max, ThreadType type) {
+        max = max < 0 ? Integer.MAX_VALUE : max;
+        Map<Thread, Double> cpuConsumingThreads = new HashMap<>();
+        for(Thread first : snapshot.getThreadMap().values()) {
+            if(type!=null && first.getType()!=type) {
+                continue;
+            }
+            Thread second = other.snapshot.getThreadMap().values().stream().filter(t -> t.getTid()==first.getTid()).findFirst().orElse(null);
+            if(second != null && second.getCpu()>0 ) {
+                cpuConsumingThreads.put(first, second.getCpu() - first.getCpu());
+            }
+        }
+        List<VThread> result = new ArrayList<VThread>();
+        cpuConsumingThreads.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(max).forEach(e -> {
+            Thread thread = e.getKey();
+            VThread vthread = convertToVThread(thread);
+            vthread.setCpu(e.getValue());
+            result.add(vthread);
+        });
         return result;
     }
 

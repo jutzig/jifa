@@ -15,6 +15,7 @@ package org.eclipse.jifa.tda;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public class TestAnalyzer extends TestBase {
         Assert.assertEquals(2, threads.getTotalSize());
 
         threads = tda.threads(null, null, OSTreadState.OBJECT_WAIT.toString(), new PagingRequest(1, 100));
-        Assert.assertEquals(2, threads.getTotalSize());
+        Assert.assertEquals(0, threads.getTotalSize());
 
         threads = tda.threads("Refer", ThreadType.JAVA, JavaThreadState.IN_OBJECT_WAIT.toString(), new PagingRequest(1, 100));
         Assert.assertEquals(1, threads.getTotalSize());
@@ -106,5 +107,81 @@ public class TestAnalyzer extends TestBase {
         assertEquals("Thread-7728084", t.getBlockedThreads().get(0).getName());
         assertEquals(0x00000001d3b1f158L, t.getHeldLock().getAddress());
         assertEquals("org.example.jmsadapter.listener.CrossInstanceLock", t.getHeldLock().getClazz());
+    }
+
+    @Test
+    public void testCpuConsumingThreads() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VThread> cpuConsumingThreads = tda.cpuConsumingThreads(null, 5);
+        assertEquals(5,cpuConsumingThreads.size());
+        
+        VThread t = cpuConsumingThreads.get(0);
+        assertEquals("main", t.getName());
+        assertEquals(108.49, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(1);
+        assertEquals("C1 CompilerThread0", t.getName());
+        assertEquals(19.04, t.getCpu(),0.1);
+    }
+
+    @Test
+    public void testCpuConsumingThreadsWithFilter() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VThread> cpuConsumingThreads = tda.cpuConsumingThreads(ThreadType.JAVA, 50);
+        assertEquals(9,cpuConsumingThreads.size());
+
+        VThread t = cpuConsumingThreads.get(0);
+        assertEquals("main", t.getName());
+        assertEquals(108.49, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(1);
+        assertEquals("Sweeper thread", t.getName());
+        assertEquals(0.95, t.getCpu(),0.1);
+    }
+
+    @Test
+    public void cpuConsumingThreadsCompare() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        ThreadDumpAnalyzer tda2 = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks_copy_cpu_compare.log"), new DefaultProgressListener());
+        
+        List<VThread> cpuConsumingThreads = tda.cpuConsumingThreadsCompare(tda2, 5, null);
+        assertEquals(5,cpuConsumingThreads.size());
+        
+        VThread t = cpuConsumingThreads.get(0);
+        assertEquals("C2 CompilerThread0", t.getName());
+        assertEquals(10000, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(1);
+        assertEquals("Thread-0", t.getName());
+        assertEquals(5000, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(2);
+        assertEquals("main", t.getName());
+        assertEquals(1000, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(3);
+        assertEquals("Finalizer", t.getName());
+        assertEquals(23, t.getCpu(),0.1);
+    }
+
+    @Test
+    public void cpuConsumingThreadsCompareWithFilter() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        ThreadDumpAnalyzer tda2 = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks_copy_cpu_compare.log"), new DefaultProgressListener());
+        
+        List<VThread> cpuConsumingThreads = tda.cpuConsumingThreadsCompare(tda2, 5, ThreadType.JAVA);
+        assertEquals(5,cpuConsumingThreads.size());
+        
+        VThread t = cpuConsumingThreads.get(0);
+        assertEquals("Thread-0", t.getName());
+        assertEquals(5000, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(1);
+        assertEquals("main", t.getName());
+        assertEquals(1000, t.getCpu(),0.1);
+
+        t = cpuConsumingThreads.get(2);
+        assertEquals("Finalizer", t.getName());
+        assertEquals(23, t.getCpu(),0.1);
     }
 }

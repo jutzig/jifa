@@ -129,4 +129,18 @@ public class ThreadDumpRoute extends ThreadDumpBaseRoute {
         ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
         promise.complete(analyzer.blockingThreads());
     }
+
+    /**
+     * returns a list of threads that are consuming the most CPU. The threads are sorted
+     * from most CPU consuming, to least
+     * @param promise
+     * @param file file id of the thread dump
+     * @param max the max amount of threads to include (<code>-1</code> for unlimited)
+     * @param threadType filter the results for a specfic thread type (may be <code>null</code>)
+     */
+    @RouteMeta(path = "/cpuConsumingThreads")
+    public void cpuConsumingThreads(Promise<List<VThread>> promise, @ParamKey("file") String file, @ParamKey(value="max",  mandatory = false) int max, @ParamKey(value="type", mandatory = false) ThreadType threadType) {
+        ThreadDumpAnalyzer analyzer = Analyzer.threadDumpAnalyzerOf(file);
+        promise.complete(analyzer.cpuConsumingThreads(threadType, max > 0 ? max : Integer.MAX_VALUE));
+    }
 }

@@ -56,6 +56,11 @@
         <blocked-threads :file="file"/>
       </el-collapse-item>
 
+     <!-- CPU consuming threads-->
+     <el-collapse-item :title="$t('jifa.threadDump.cpuConsumingThreadsLabel')" name="cpuConsumingThreads" id="cpuConsumingThreads">
+        <cpu-consuming-threads :file="file"/>
+      </el-collapse-item>
+
       <!-- threads -->
       <el-collapse-item v-loading="loading" :title="$t('jifa.threadDump.threadSummary')" name="threadSummary" id="threadSummary">
         <el-table v-loading="loading"
@@ -139,6 +144,7 @@ import Thread from "@/components/threaddump/Thread";
 import Monitor from "@/components/threaddump/Monitor";
 import CallSiteTree from "@/components/threaddump/CallSiteTree";
 import BlockedThreads from "@/components/threaddump/BlockedThreads";
+import CpuConsumingThreads from "@/components/threaddump/CpuConsumingThreads"
 import FileContent from "@/components/threaddump/Content";
 
 import {formatTime, threadDumpService} from '@/util'
@@ -152,6 +158,7 @@ export default {
     Thread,
     Monitor,
     CallSiteTree,
+    CpuConsumingThreads,
     FileContent,
   },
   data() {
@@ -171,7 +178,7 @@ export default {
       basicInfo: null,
       threadStats: null,
       threadGroupStats: null,
-      activeNames: ['basicInfo', 'threadSummary', 'blockedThreads', 'threadGroupSummary', 'monitors', 'callSiteTree'],
+      activeNames: ['basicInfo', 'threadSummary', 'blockedThreads', 'cpuConsumingThreads', 'threadGroupSummary'],
       deadLockCount: 0,
       errorCount: 0,
 

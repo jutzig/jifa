@@ -36,7 +36,10 @@
                 </div>
               </b-card>
             </div>
-      
+            <el-dialog :visible.sync="threadTableVisible" width="60%" top="5vh">
+              <thread :file="files[files.length-1]" :id="selectedThreadId" />
+            </el-dialog>
+
             <el-container v-if="analysisState === 'SUCCESS'" style="height: 100%">
               <el-aside width="250px">
                 <div style="font-size: 16px; height: 100%;">
@@ -46,6 +49,7 @@
                   <el-divider/>
                   <div class="nav-item"><a href="#stateCompare">{{ $t('jifa.threadDumpCompare.stateCompare') }}</a></div>
                   <div class="nav-item"><a href="#threadGroupCompare">{{ $t('jifa.threadDumpCompare.threadGroupCompare') }}</a></div>
+                  <div class="nav-item"><a href="#cpuConsumption">{{ $t('jifa.threadDumpCompare.cpuConsumingTitle') }}</a></div>
                 </el-card>
               </div>
              </el-aside>
@@ -86,6 +90,14 @@
                     </div>
                   </el-card>
                 </el-container>
+                <el-container>
+                  <el-card :header="$t('jifa.threadDumpCompare.cpuConsumingTitle')" style="width: 100%;" id="cpuConsumption">
+                    <span>{{ $t('jifa.threadDumpCompare.cpuConsumingDescription') }}</span>
+                    <div>
+                        <el-col :span="20"><bar-chart :chart-data="cpuConsumptionChartData" :options="cpuConsumptionChartOptions" :width='1000' :height='400' /></el-col>
+                    </div>
+                  </el-card>
+                </el-container>
               </el-main>
             </el-container>
           </el-main>
@@ -96,7 +108,8 @@
   <script>
   import ViewMenu from "../menu/ViewMenu";
   import axios from "axios";
-  import {threadDumpBase} from "@/util";
+  import {threadDumpBase, determineTimeUnit, formatTimeDuration } from "@/util";
+  import Thread from "@/components/threaddump/Thread";
   import LineChart from '../charts/LineChart'
   import BarChart from '../charts/BarChart'
     
@@ -106,6 +119,7 @@
       LineChart,
       BarChart,
       ViewMenu,
+      Thread,
     },
     data() {
       return {
@@ -129,6 +143,8 @@
         pollingInternal: 500,
         comparison: null,
         files: [],
+        threadTableVisible: false,
+        selectedThreadId: null,
         threadsChartData: {
           type: 'line',
           data: {
@@ -164,6 +180,16 @@
           maintainAspectRatio: false,
           parsing: true,
         },
+        cpuConsumptionChartData: [],
+        cpuConsumptionChartOptions: {
+          responsive: false,
+          maintainAspectRatio: false,
+          parsing: true,
+          onClick: (event,data) => {
+            let thread = this.cpuConsumptionChartData.threads[data[0]._index];
+            this.selectThreadId(thread.id);
+          }
+        },
  
       }
     },
@@ -174,19 +200,28 @@
 
         let params = '?';
         for (let i = 0; i < this.files.length; i++) {
-          params = params + "files=" + this.files[i] + "&"
+          params = params + "files=" + this.files[i]
+          if (i<this.files.length-1) {
+            params = params + "&"
+          }
+
         }
-        axios.get(threadDumpBase() + 'compare/summary' + params).then(resp => {
-          let summary = resp.data
+
+        axios.all([axios.get(threadDumpBase() + 'compare/summary' + params)
+                  ,axios.get(threadDumpBase() + 'compare/compareCPUConsumption' + (params + '&max=10&type=JAVA'))]).then(axios.spread((resp1, resp2) => {
+          let summary = resp1.data
           self.comparison = summary
         
           //create chart data
           this.createThreadStateChartData(summary)
           this.createThreadGroupStats(summary)
+
+          //create the CPU consumption chart data
+          this.createCpuConsumingStats(resp2.data)
+
           this.loading = false
           this.analysisState = "SUCCESS"
-        })
-        
+        }))        
       },
       createThreadGroupStats(summary) {
         //creates bar chart groups for the largest thread groups (based on the first dump)  
@@ -264,7 +299,28 @@
         }
         return s
       },
+      createCpuConsumingStats(threads) {
+        let self = this;
+        let timeunit = determineTimeUnit(threads[0].cpu);
+
+        this.cpuConsumptionChartData = {     
+          //the labels are names of the thread groups we will. Each thread group will be a group of bar charts (one bar per dump)                     
+          labels: threads.map(t => t.name),
+          threads: threads,
+          datasets: [{
+            data: threads.map(t => formatTimeDuration(t.cpu, timeunit)),
+            backgroundColor: self.color,
+            label: self.$t('jifa.threadDumpCompare.cpuConsumingDatasetLabel',{unit: timeunit}),
+          }]
+        }
+      },
+
+      selectThreadId(id) {
+        this.selectedThreadId = id
+        this.threadTableVisible = true
+      },
     },
+
     
     mounted() {
       this.files = this.$route.query.files 

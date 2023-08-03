@@ -463,6 +463,15 @@ exports.default = {
       blockedThreads: {
         title: "{blocker} is blocking one other thread | {blocker} is blocking {count} other threads"
       },
+      cpuConsumingThreadsLabel: "CPU Consumption",
+      cpuConsumingThreads: {
+        title: "Displays which threads consume the most CPU",
+        cpuConsumptionLabel: "CPU Consumption",
+        hours: "Hours",
+        minutes: "Minutes",
+        seconds: "Seconds",
+        milliseconds: "Milliseconds",
+      },
       threadDumpCompare: 'Compare Thread Dumps',
       threadDumpFilePlaceholder: 'Fill with the URL of the analyis page of another thread dump'
     },
@@ -475,6 +484,9 @@ exports.default = {
       stateCompareDescription: "Displays the distribution of Java thread states across dumps",
       threadGroupCompare: "Thread Group Compare",
       threadGroupCompareDescription: "If the amount of threads per group changes a lot between dumps, that group may be worth investigating",
+      cpuConsumingTitle: "CPU Consuming Threads",
+      cpuConsumingDescription: "Displays the threads that consumed the most amount of CPU between the dumps. The threads are matched by tid, the thread name can change between dumps.",
+      cpuConsumingDatasetLabel: "CPU Consumption in {unit}",
     },
   }
 };
