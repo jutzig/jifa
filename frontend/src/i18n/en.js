@@ -297,6 +297,8 @@ exports.default = {
         metaspaceCapacity: 'Metaspace Capacuty',
         reclamation: 'Reclamation',
         promotion: 'Promotion',
+        time: 'Time',
+        memory: 'Memory',
       },
 
       cause: {
