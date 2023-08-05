@@ -86,8 +86,12 @@ public class MATProvider implements HeapDumpAnalyzer.Provider {
                 String name = file.getName();
                 // org.eclipse.osgi is the system bundle
                 if (name.endsWith(".jar") && !name.startsWith("org.eclipse.osgi-")) {
-                    Bundle b = framework.getBundleContext().installBundle(file.toURI().toString());
-                    bundles.add(b);
+                    try {
+                        Bundle b = framework.getBundleContext().installBundle(file.toURI().toString());
+                        bundles.add(b);
+                    } catch(Exception e) {
+                        LOGGER.error("Failed to install bundle {}",file, e);
+                    }
                 }
             }
 
