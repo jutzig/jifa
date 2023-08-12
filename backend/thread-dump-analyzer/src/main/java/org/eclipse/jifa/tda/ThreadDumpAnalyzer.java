@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,7 +53,10 @@ import org.eclipse.jifa.tda.vo.Overview;
 import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
+import org.eclipse.jifa.tda.vo.VSearchResult;
 import org.eclipse.jifa.tda.vo.VThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thread dump analyzer
@@ -60,6 +64,7 @@ import org.eclipse.jifa.tda.vo.VThread;
 public class ThreadDumpAnalyzer {
 
     private final Snapshot snapshot;
+    private final Logger LOGGER = LoggerFactory.getLogger(ThreadDumpAnalyzer.class);
 
     ThreadDumpAnalyzer(Path path, ProgressListener listener) {
         snapshot = ParserFactory.buildParser(path).parse(path, listener);
@@ -441,5 +446,34 @@ public class ThreadDumpAnalyzer {
         }
         return candidates.stream().filter(m -> m.getState()==MonitorState.WAITING_TO_LOCK || m.getState()==MonitorState.WAITING_TO_RE_LOCK).findFirst().orElse(null);
     }  
+
+    /**
+     * searches threads based on the given criteria. See SearchQuery for
+     * details on how to create the predicate 
+     * @param searchFilter
+     * @return list of search results
+     */
+    public List<VSearchResult> search(Predicate<Thread> searchFilter) {
+        return snapshot.getThreadMap().values().stream().filter(searchFilter).map(t -> {
+            VSearchResult result = new VSearchResult();
+            result.setCpu(t.getCpu());
+            result.setElapsed(t.getElapsed());
+            result.setId(t.getId());
+            result.setOsState(t.getOsThreadState());
+            if(t instanceof JavaThread) {
+                result.setJavaState((((JavaThread)t).getJavaThreadState()));
+            } 
+            result.setName(t.getName());
+            result.setFilename(Path.of((snapshot.getPath())).getFileName().toString());
+            try {
+                result.setLines(rawContentOfThread(t.getId()));
+            }
+            catch(IOException e) {
+                LOGGER.error("Failed to load raw content of thread {}",t.getName(), e);
+                result.setLines(Arrays.asList("Failed to load"));
+            }
+            return result;
+        }).collect(Collectors.toList());
+    }
 
 }

@@ -488,5 +488,23 @@ exports.default = {
       cpuConsumingDescription: "Displays the threads that consumed the most amount of CPU between the dumps. The threads are matched by tid, the thread name can change between dumps.",
       cpuConsumingDatasetLabel: "CPU Consumption in {unit}",
     },
-  }
-};
+
+    threadDumpSearch: {
+      loadingPlaceholder: "Searching...",
+      menuThreadsTitle: "Threads", 
+      searchTitle: "Search",     
+      resultsHeader: "1 thread is matching the search | {count} threads are matching the search",
+      threadStatesChartTitle: "Thread States of the search results",
+      advancedToggle: "Show Advanced",
+      searchFields: "Search in",
+      searchOptions: "Search Options",
+      searchFieldName: "Thread Names",
+      searchFieldState: "Thread State",
+      searchFieldStack: "Thread Stacks",
+      searchOptionRegex: "Regular Expression",
+      searchOptionMatchCase: "Match Case",
+      searchOptionThreadStates: "Thread States",
+      searchOptionThreadStatesPlaceholder: "Any",
+    },
+  },
+}

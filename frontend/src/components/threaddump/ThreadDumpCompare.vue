@@ -18,6 +18,7 @@
             <view-menu subject="analysisResult"
                        :file="files"
                        :analysisState="analysisState"
+                       @search="doSearch"
                        type="THREAD_DUMP_COMPARE"/>
           </el-header>
       
@@ -318,6 +319,17 @@
       selectThreadId(id) {
         this.selectedThreadId = id
         this.threadTableVisible = true
+      },
+      doSearch(searchText) {
+        const query = {
+          file: this.files,
+          term: searchText,
+        }
+        const url = this.$router.resolve({
+          name: 'threadDumpSearch',
+          query: query
+        })
+        window.open(url.href)
       },
     },
 

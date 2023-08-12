@@ -59,6 +59,16 @@
     <b-nav-item href="#" @click="doUnlock" v-if="$jifa.fileManagement && !$jifa.workerOnly && showUnlockOpt">
       <i class="el-icon-folder-opened" style="margin-right: 3px"/> {{$t("jifa.unlockFile")}}
     </b-nav-item>
+
+    <b-nav-item href="#" v-if="analysisState === 'SUCCESS' && searchEnabled.includes(type)" @keyup.enter="$emit('search', searchInput)">
+      <el-input
+        clearable
+        v-model="searchInput"
+        :placeholder="$t('jifa.threadDumpSearch.searchTitle')"
+        prefix-icon="el-icon-search"
+        size="small"
+      />
+    </b-nav-item>
   </b-navbar-nav>
 </template>
 <script>
@@ -72,6 +82,8 @@
       return {
         showUnlockOpt: false,
         showDownloadOpt: false,
+        searchInput: '',
+        searchEnabled: ['THREAD_DUMP','THREAD_DUMP_COMPARE'],
       }
     },
 

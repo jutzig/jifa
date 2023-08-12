@@ -67,7 +67,18 @@ class RouterAnnotationProcessor {
                 processListParam(arguments, context, method, param, paramKey);
             }
             else {
-                arguments.add(value != null ? convert(method, param, context.request().getParam(paramKey.value())) : null);
+                if(value == null) {
+                    String defaultValue = "<null>".equals(paramKey.defaultValue()) ? null : paramKey.defaultValue(); 
+                    if(defaultValue == null) {
+                        arguments.add(null);
+                    }
+                    else {
+                        arguments.add(convert(method, param, defaultValue));
+                    }
+                }
+                else {
+                    arguments.add(convert(method, param, context.request().getParam(paramKey.value())));
+                }
             }
             return true;
         }

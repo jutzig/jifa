@@ -19,6 +19,7 @@
                      :file="file"
                      :analysisState="analysisState"
                      @threadDumpCompareConfig="showCompareConfig"
+                     @search="doSearch"
                      type="THREAD_DUMP"/>
         </el-header>
     
@@ -199,7 +200,18 @@ export default {
             this.compareConfigVisible = false
           }
         })
-      }
+      },
+      doSearch(searchText) {
+        const query = {
+          file: [this.file],
+          term: searchText,
+        }
+        const url = this.$router.resolve({
+          name: 'threadDumpSearch',
+          query: query
+        })
+        window.open(url.href)
+      },
   },
   mounted() {
     this.analyzeThreadDump();

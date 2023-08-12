@@ -34,6 +34,8 @@ import org.eclipse.jifa.master.support.WorkerClient;
 import static org.eclipse.jifa.common.util.Assertion.ASSERT;
 import static org.eclipse.jifa.master.entity.enums.JobType.*;
 
+import java.util.List;
+
 class AnalyzerRoute extends BaseRoute {
 
     private JobService jobService;
@@ -54,6 +56,7 @@ class AnalyzerRoute extends BaseRoute {
 
         // thread dump
         apiRouter.route().path(THREAD_DUMP_RELEASE).handler(context -> release(context, THREAD_DUMP_ANALYSIS));
+        apiRouter.route().path(THREAD_DUMP_SEARCH).handler(context -> processMultiFile(context, THREAD_DUMP_ANALYSIS));
         apiRouter.route().path(THREAD_DUMP_COMMON).handler(context -> process(context, THREAD_DUMP_ANALYSIS));
     }
 
@@ -91,6 +94,22 @@ class AnalyzerRoute extends BaseRoute {
         String fileName = context.request().getParam("file");
 
         fileService.rxFile(fileName)
+                   .doOnSuccess(file -> assertFileAvailable(file))
+                   .doOnSuccess(file -> checkPermission(user, file))
+                   .doOnSuccess(file -> ASSERT.isTrue(file.transferred(), ErrorCode.NOT_TRANSFERRED))
+                   .flatMap(file -> findOrAllocate(user, file, jobType))
+                   .doOnSuccess(this::assertJobInProgress)
+                   .flatMap(job -> WorkerClient.send(context.request(), job.getHostIP()))
+                   .subscribe(resp -> HTTPRespGuarder.ok(context, resp.statusCode(), resp.bodyAsString()),
+                              t -> HTTPRespGuarder.fail(context, t));
+    }
+
+    private void processMultiFile(RoutingContext context, JobType jobType) {
+        User user = context.get(Constant.USER_INFO_KEY);
+        context.request().params().add("userName", user.getName());
+        List<String> files = context.queryParams().getAll("file");
+
+        fileService.rxFile(files.stream().findFirst().get())
                    .doOnSuccess(file -> assertFileAvailable(file))
                    .doOnSuccess(file -> checkPermission(user, file))
                    .doOnSuccess(file -> ASSERT.isTrue(file.transferred(), ErrorCode.NOT_TRANSFERRED))

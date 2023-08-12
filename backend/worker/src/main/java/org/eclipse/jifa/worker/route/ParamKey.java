@@ -24,4 +24,6 @@ public @interface ParamKey {
     String value();
 
     boolean mandatory() default true;
+
+    String defaultValue() default "<null>";
 }

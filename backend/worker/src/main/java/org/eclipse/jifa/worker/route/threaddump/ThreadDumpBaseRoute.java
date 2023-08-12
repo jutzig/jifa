@@ -14,7 +14,6 @@ package org.eclipse.jifa.worker.route.threaddump;
 
 import org.eclipse.jifa.worker.route.BaseRoute;
 import org.eclipse.jifa.worker.route.MappingPrefix;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +25,7 @@ public class ThreadDumpBaseRoute extends BaseRoute {
     static {
         ROUTES.add(ThreadDumpCompareRoute.class);
         ROUTES.add(ThreadDumpRoute.class);
+        ROUTES.add(ThreadDumpSearchRoute.class);
     }
 
     public static List<Class<? extends ThreadDumpBaseRoute>> routes() {

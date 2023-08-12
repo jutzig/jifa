@@ -71,11 +71,36 @@ public class RouterAnnotationProcessorTest {
         assertEquals(Arrays.asList(1,2,3), arguments.get(0));
     }
 
+    @Test
+    public void testProcessDefaultInt() throws Exception {
+        List<Object> arguments = new ArrayList<>();
+        Method method = getClass().getMethod("testMethodDefaultParam", Integer.TYPE);
+        Parameter parameter = method.getParameters()[0];
+        
+        RouterAnnotationProcessor.processParamKey(arguments , context, method, parameter);
+        assertEquals(100, arguments.get(0));
+    }
+
+    @Test
+    public void testProcessDefaultIntSet() throws Exception {
+        when(request.getParam("testKey")).thenReturn("5");
+        List<Object> arguments = new ArrayList<>();
+        Method method = getClass().getMethod("testMethodDefaultParam", Integer.TYPE);
+        Parameter parameter = method.getParameters()[0];
+        
+        RouterAnnotationProcessor.processParamKey(arguments , context, method, parameter);
+        assertEquals(5, arguments.get(0));
+    }
+
     public static void testMethodString(@ParamKey("testKey") List<String> param) {
 
     }
 
     public static void testMethodInt(@ParamKey("testKey") List<Integer> param) {
+
+    }
+
+    public static void testMethodDefaultParam(@ParamKey(value = "testKey", mandatory = false, defaultValue = "100") int key) {
 
     }
 }

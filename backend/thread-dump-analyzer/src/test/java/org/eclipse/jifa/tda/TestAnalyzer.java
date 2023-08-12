@@ -15,8 +15,7 @@ package org.eclipse.jifa.tda;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.eclipse.jifa.common.listener.DefaultProgressListener;
@@ -25,11 +24,13 @@ import org.eclipse.jifa.common.vo.PageView;
 import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.OSTreadState;
 import org.eclipse.jifa.tda.enums.ThreadType;
+import org.eclipse.jifa.tda.util.SearchQuery;
 import org.eclipse.jifa.tda.vo.Content;
 import org.eclipse.jifa.tda.vo.Overview;
 import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
+import org.eclipse.jifa.tda.vo.VSearchResult;
 import org.eclipse.jifa.tda.vo.VThread;
 import org.junit.Assert;
 import org.junit.Test;
@@ -183,5 +184,36 @@ public class TestAnalyzer extends TestBase {
         t = cpuConsumingThreads.get(2);
         assertEquals("Finalizer", t.getName());
         assertEquals(23, t.getCpu(),0.1);
+    }
+
+    @Test
+    public void testSearch() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VSearchResult> result = tda.search(SearchQuery.forTerms("ReferenceQueue").build());
+        assertEquals(2,result.size());
+        assertEquals("Finalizer",result.get(0).getName());
+        assertEquals("Common-Cleaner", result.get(1).getName());
+
+        result = tda.search(SearchQuery.forTerms("ReferenceQueue").withAllowedJavaStates(EnumSet.of(JavaThreadState.IN_OBJECT_WAIT_TIMED)).build());
+        assertEquals("Common-Cleaner", result.get(0).getName());
+    }
+
+    @Test
+    public void testSearchRegex() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VSearchResult> result = tda.search(SearchQuery.forTerms("Ref.*Queue").withRegex(true).build());
+        assertEquals(2,result.size());
+        assertEquals("Finalizer",result.get(0).getName());
+        assertEquals("Common-Cleaner", result.get(1).getName());
+    }
+
+    @Test
+    public void testSearchMatchCase() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VSearchResult> result = tda.search(SearchQuery.forTerms("Re").withMatchCase(false).build());
+        assertEquals(13,result.size());
+
+        result = tda.search(SearchQuery.forTerms("Re").withMatchCase(true).build());
+        assertEquals(5,result.size());
     }
 }
