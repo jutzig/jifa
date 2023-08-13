@@ -16,7 +16,7 @@
         <el-container>
           <el-header>
             <view-menu subject="analysisResult"
-                       :file="files"
+                       :file="file"
                        :analysisState="analysisState"
                        @search="doSearch"
                        type="THREAD_DUMP_COMPARE"/>
@@ -38,7 +38,7 @@
               </b-card>
             </div>
             <el-dialog :visible.sync="threadTableVisible" width="60%" top="5vh">
-              <thread :file="files[files.length-1]" :id="selectedThreadId" />
+              <thread :file="file[file.length-1]" :id="selectedThreadId" />
             </el-dialog>
 
             <el-container v-if="analysisState === 'SUCCESS'" style="height: 100%">
@@ -46,7 +46,7 @@
                 <div style="font-size: 16px; height: 100%;">
                 <el-card :header="$t('jifa.threadDumpCompare.navigation')" style="height: 100%;">
                   <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDumpCompare.navToTop') }}</a></div>
-                  <div class="nav-item" v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></div>
+                  <div class="nav-item" v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{computeFilename(fileInfo)}}</a></div>
                   <el-divider/>
                   <div class="nav-item"><a href="#stateCompare">{{ $t('jifa.threadDumpCompare.stateCompare') }}</a></div>
                   <div class="nav-item"><a href="#threadGroupCompare">{{ $t('jifa.threadDumpCompare.threadGroupCompare') }}</a></div>
@@ -64,7 +64,7 @@
                           <table style="width: 100%;" class="thread-state-table">
                             <thead>
                               <th>Thread State</th>
-                              <th v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.originalName}}</a></th>
+                              <th v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.name}}</a></th>
                             </thead>
                             <tbody>
                                 <tr v-for="(state, stateIndex) in comparison.overviews[0].javaStates" :key="stateIndex">
@@ -143,7 +143,7 @@
         progress: 0,
         pollingInternal: 500,
         comparison: null,
-        files: [],
+        file: [],
         threadTableVisible: false,
         selectedThreadId: null,
         threadsChartData: {
@@ -198,18 +198,25 @@
       analyzeThreadDump() {
         let self = this;
         this.analysisState = "IN_PROGRESS";
-
-        let params = '?';
-        for (let i = 0; i < this.files.length; i++) {
-          params = params + "files=" + this.files[i]
-          if (i<this.files.length-1) {
-            params = params + "&"
-          }
-
-        }
-
-        axios.all([axios.get(threadDumpBase() + 'compare/summary' + params)
-                  ,axios.get(threadDumpBase() + 'compare/compareCPUConsumption' + (params + '&max=10&type=JAVA'))]).then(axios.spread((resp1, resp2) => {
+        axios.all(
+          [axios.get(threadDumpBase() + 'compare/summary', {
+            params: {
+              file: this.file,
+            },
+            paramsSerializer: {
+              indexes: null, // no brackets for multi-value params
+            } 
+          }),
+           axios.get(threadDumpBase() + 'compare/compareCPUConsumption', {
+            params: {
+              file: this.file,
+              max: 10,
+              type: "JAVA",
+            },
+            paramsSerializer: {
+              indexes: null, // no brackets for multi-value params
+            } 
+           })]).then(axios.spread((resp1, resp2) => {
           let summary = resp1.data
           self.comparison = summary
         
@@ -219,7 +226,6 @@
 
           //create the CPU consumption chart data
           this.createCpuConsumingStats(resp2.data)
-
           this.loading = false
           this.analysisState = "SUCCESS"
         }))        
@@ -249,11 +255,13 @@
           let groupData = []
           candidates.forEach(threadGroup => {
             let currentStat = overview.threadGroupStat[threadGroup.key]
-            groupData.push(this.sum(currentStat.counts))
+            if(currentStat!=null) {
+              groupData.push(this.sum(currentStat.counts))
+            }
           });
           this.threadGroupChartData.datasets.push({
             backgroundColor: this.color[index],
-            label: summary.fileInfos[index].originalName,
+            label: this.computeFilename(summary.fileInfos[index]),
             data: groupData
           })
         });
@@ -264,7 +272,7 @@
         let self = this;
         self.threadsChartData.data.labels = []
         summary.fileInfos.forEach(fileInfo => {
-          self.threadsChartData.data.labels.push(fileInfo.originalName)
+          self.threadsChartData.data.labels.push(self.computeFilename(fileInfo))
         })
         self.threadsChartData.data.datasets = []
         //one dataset per thread state kind, one data point per dump
@@ -302,17 +310,20 @@
       },
       createCpuConsumingStats(threads) {
         let self = this;
-        let timeunit = determineTimeUnit(threads[0].cpu);
+        if(threads.length>0) {
+          let timeunit = determineTimeUnit(threads[0].cpu);
+  
+          this.cpuConsumptionChartData = {     
+            //the labels are names of the thread groups we will. Each thread group will be a group of bar charts (one bar per dump)                     
+            labels: threads.map(t => t.name),
+            threads: threads,
+            datasets: [{
+              data: threads.map(t => formatTimeDuration(t.cpu, timeunit)),
+              backgroundColor: self.color,
+              label: self.$t('jifa.threadDumpCompare.cpuConsumingDatasetLabel',{unit: timeunit}),
+            }]
+          }
 
-        this.cpuConsumptionChartData = {     
-          //the labels are names of the thread groups we will. Each thread group will be a group of bar charts (one bar per dump)                     
-          labels: threads.map(t => t.name),
-          threads: threads,
-          datasets: [{
-            data: threads.map(t => formatTimeDuration(t.cpu, timeunit)),
-            backgroundColor: self.color,
-            label: self.$t('jifa.threadDumpCompare.cpuConsumingDatasetLabel',{unit: timeunit}),
-          }]
         }
       },
 
@@ -322,7 +333,7 @@
       },
       doSearch(searchText) {
         const query = {
-          file: this.files,
+          file: this.file,
           term: searchText,
         }
         const url = this.$router.resolve({
@@ -331,11 +342,17 @@
         })
         window.open(url.href)
       },
+      computeFilename(fileInfo) {
+        if(fileInfo.originalName != null && fileInfo.originalName.length<fileInfo.name) {
+          return fileInfo.originalName
+        }
+        return fileInfo.name
+      }
     },
 
     
     mounted() {
-      this.files = this.$route.query.files 
+      this.file = this.$route.query.file
       this.analyzeThreadDump();
     }
   }

@@ -57,6 +57,7 @@ class AnalyzerRoute extends BaseRoute {
         // thread dump
         apiRouter.route().path(THREAD_DUMP_RELEASE).handler(context -> release(context, THREAD_DUMP_ANALYSIS));
         apiRouter.route().path(THREAD_DUMP_SEARCH).handler(context -> processMultiFile(context, THREAD_DUMP_ANALYSIS));
+        apiRouter.route().path(THREAD_DUMP_COMPARE).handler(context -> processMultiFile(context, THREAD_DUMP_ANALYSIS));
         apiRouter.route().path(THREAD_DUMP_COMMON).handler(context -> process(context, THREAD_DUMP_ANALYSIS));
     }
 

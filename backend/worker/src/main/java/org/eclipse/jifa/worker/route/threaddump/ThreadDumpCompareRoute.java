@@ -41,13 +41,13 @@ public class ThreadDumpCompareRoute extends ThreadDumpBaseRoute {
     /**
      * creates a comparison between several thread dumps
      * @param promise
-     * @param files
+     * @param file
      */
     @RouteMeta(path = "/compare/summary", method = HttpMethod.GET )
-    public void summary(Promise<Comparison> promise, @ParamKey(value = "files", mandatory = false) List<String> files) {
+    public void summary(Promise<Comparison> promise, @ParamKey(value = "file", mandatory = false) List<String> file) {
         Comparison result = new Comparison();
-        for (String file : files) {
-            result.getFileInfos().add(FileSupport.info(FileType.THREAD_DUMP, file));
+        for (String current : file) {
+            result.getFileInfos().add(FileSupport.info(FileType.THREAD_DUMP, current));
         }
         Collections.sort(result.getFileInfos(), Comparator.comparing(FileInfo::getCreationTime));
         for (FileInfo info : result.getFileInfos()) {
@@ -60,16 +60,16 @@ public class ThreadDumpCompareRoute extends ThreadDumpBaseRoute {
     /**
      * creates a list of threads that consumed the most CPU between the first thread dump, and the last
      * @param promise
-     * @param files
+     * @param file
      * @param max 
      */
     @RouteMeta(path = "/compare/compareCPUConsumption", method = HttpMethod.GET )
-    public void cpuConsumingThreads(Promise<List<VThread>> promise, @ParamKey(value = "files", mandatory = false) List<String> files,
+    public void cpuConsumingThreads(Promise<List<VThread>> promise, @ParamKey(value = "file", mandatory = false) List<String> file,
                                     @ParamKey(value="max", mandatory = false) Integer max,
                                     @ParamKey(value="type", mandatory = false) ThreadType type) {
         Comparison c = new Comparison();
-        for (String file : files) {
-            c.getFileInfos().add(FileSupport.info(FileType.THREAD_DUMP, file));
+        for (String current : file) {
+            c.getFileInfos().add(FileSupport.info(FileType.THREAD_DUMP, current));
         }
         Assertion.ASSERT.isTrue(c.getFileInfos().size()>1, ErrorCode.ILLEGAL_ARGUMENT, "Need at least two thread dumps to compare");
         Collections.sort(c.getFileInfos(), Comparator.comparing(FileInfo::getCreationTime));

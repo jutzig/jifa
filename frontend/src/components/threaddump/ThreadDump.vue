@@ -178,7 +178,7 @@ export default {
         this.$refs['compareForm'].validate((valid) => {
           if (valid) {
             const query = {
-              files: []
+              file: []
             }
             for (let i = 0; i <= 2; i++) {
               const file = this.compareConfigModel["file" + i]
@@ -187,9 +187,9 @@ export default {
               }
               if (file.indexOf('/threadDump?') >= 0 && file.indexOf('file=') >= 0) {
                 const params = getUrlParams(file);
-                query.files.push(params.file)
+                query.file.push(params.file)
               } else {
-                query.files.push(file)
+                query.file.push(file)
               }
             }
             const url = this.$router.resolve({
