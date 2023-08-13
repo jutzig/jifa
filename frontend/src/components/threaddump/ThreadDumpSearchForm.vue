@@ -18,8 +18,7 @@
                     <el-form :inline="false" :model="search" ref="formRef"  label-width="auto" size="small">
                         <el-row :gutter="20">
                             <el-col :span="6">
-                                <!-- need to try to factor the search form out and send an event back -->
-                                <el-input clearable  v-model.lazy="search.term" :minLength="2" @keydown.enter.native.prevent="e => submitSearchForm()" placeholder="$t('jifa.threadDumpSearch.searchTitle')" prefix-icon="el-icon-search" />
+                                <el-input clearable  v-model.lazy="search.term" :minLength="2" @keydown.enter.native.prevent="e => submitSearchForm()" :placeholder="$t('jifa.threadDumpSearch.searchTitle')" prefix-icon="el-icon-search" />
                                 
                             </el-col>
                             <el-col :span="6">
