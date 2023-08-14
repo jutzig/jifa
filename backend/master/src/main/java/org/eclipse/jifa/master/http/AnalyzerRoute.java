@@ -68,7 +68,7 @@ class AnalyzerRoute extends BaseRoute {
                                          Single.just(job) :
                                          jobService.rxAllocate(user.getId(), file.getHostIP(), jobType,
                                                                target, EMPTY_STRING, Utils.calculateLoadFromSize(file.getSize()), false)
-                         );
+                         ).retry(2); //retry because there seems to be a race condition in allocation if there is multiple requests at once
     }
 
     private void release(RoutingContext context, JobType jobType) {
