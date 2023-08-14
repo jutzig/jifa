@@ -216,4 +216,13 @@ public class TestAnalyzer extends TestBase {
         result = tda.search(SearchQuery.forTerms("Re").withMatchCase(true).build());
         assertEquals(5,result.size());
     }
+
+     @Test
+    public void testSearchClassAndMethod() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<VSearchResult> result = tda.search(SearchQuery.forTerms("Reference.waitForReferencePendingList").build());
+        assertEquals(1,result.size());
+    }
+
+    
 }

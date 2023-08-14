@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.OSTreadState;
+import org.eclipse.jifa.tda.enums.SourceType;
 import org.eclipse.jifa.tda.model.Frame;
 import org.eclipse.jifa.tda.model.JavaThread;
 import org.eclipse.jifa.tda.model.Thread;
@@ -74,10 +75,11 @@ public class SearchQuery {
             p = p.or(t -> {
                 if(t instanceof JavaThread) {
                     JavaThread jt = (JavaThread)t;
+                    
                     if(jt.getTrace() != null) {
                         Frame[] frames = jt.getTrace().getFrames();
                         for (Frame frame : frames) {
-                            if(stringMatcher.test(frame.getClazz()) || stringMatcher.test(frame.getMethod()) || stringMatcher.test(frame.getModule())) {
+                            if(stringMatcher.test(frameToString(frame))) {
                                 return true;
                             }
                         }
@@ -102,6 +104,40 @@ public class SearchQuery {
         return overall;
     }
     
+    private String frameToString(Frame frame) {
+        //at java.lang.ref.Reference.processPendingReferences(java.base@11.0.1/Reference.java:241)
+        StringBuilder result = new StringBuilder("at ");
+        result.append(frame.getClazz());
+        result.append(".");
+        result.append(frame.getMethod());
+        result.append("(");
+        if(frame.getModule()!=null) {
+
+            result.append(frame.getModule());
+            result.append("/");
+        }
+        SourceType type = frame.getSourceType() == null ? SourceType.UNKNOWN_SOURCE : frame.getSourceType();
+        switch(type) {
+            case REDEFINED: 
+                result.append("Redefined");
+                break;
+            case SOURCE_FILE_WITH_LINE_NUMBER:
+                result.append(frame.getSource()).append(":").append(frame.getLine());
+                break;
+            case SOURCE_FILE:
+                result.append(frame.getSource());
+                break;
+            case NATIVE_METHOD:
+                result.append("Native Method");
+                break;
+            case UNKNOWN_SOURCE:
+                result.append("Unknown Source");
+                break;
+        }
+        result.append(")");
+        return result.toString();
+    }
+
     private Predicate<String> compileStringMatcher() {
         if(!matchCase) {
             terms = terms.stream().map(t -> t.toLowerCase(Locale.ROOT)).collect(Collectors.toList());
