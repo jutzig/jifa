@@ -205,6 +205,9 @@ public class TestAnalyzer extends TestBase {
         assertEquals(2,result.size());
         assertEquals("Finalizer",result.get(0).getName());
         assertEquals("Common-Cleaner", result.get(1).getName());
+
+        assertEquals(0, tda.search(SearchQuery.forTerms("Ref.*queue").withRegex(true).withMatchCase(true).build()).size());
+        assertEquals(2, tda.search(SearchQuery.forTerms("Ref.*queue").withRegex(true).withMatchCase(false).build()).size());
     }
 
     @Test

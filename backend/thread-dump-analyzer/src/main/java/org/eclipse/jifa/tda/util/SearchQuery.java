@@ -46,7 +46,7 @@ public class SearchQuery {
 
     private boolean searchState = true;
 
-    private boolean matchCase = true;
+    private boolean matchCase = false;
 
     private Set<JavaThreadState> allowedJavaStates = EnumSet.allOf(JavaThreadState.class);
 
@@ -161,7 +161,8 @@ public class SearchQuery {
     private Predicate<String> compileRegexMatcher() {
         List<Pattern> patterns = new ArrayList<>();
         for (String term : terms) {
-            patterns.add(Pattern.compile(term));
+            int flags = matchCase ? 0 : Pattern.CASE_INSENSITIVE;
+            patterns.add(Pattern.compile(term, flags));
         }
         return s -> {
             if(s == null)

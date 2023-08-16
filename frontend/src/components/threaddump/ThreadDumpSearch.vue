@@ -218,20 +218,27 @@
         }
       },
       renderThreadContent(thread) {
+        
         let content = "";
-        let terms = []
-        if(Array.isArray(this.search.term)) {
-          terms = this.search.term
-        }
-        else {
-          terms = this.search.term.split(" ")
-        }
+        let terms = Array.isArray(this.search.term) ? this.search.term : this.search.term.split(" ")
+        let patterns = []
+        terms.forEach(t => {
+          if(!this.search.regex) {
+            //if it's not a regex, special characters must be escaped
+            t = t.replace(/[-[\]{}()*+?.,\\^$|]/g, "\\$&")
+          }
+
+          let flags = "g"
+          if(!this.search.matchCase) {
+            flags = flags + "i"
+          }
+          patterns.push(new RegExp('('+t+')',flags))
+        })
+        
         thread.lines.slice(1).forEach(line => {
           let modified = line.replace("<","&lt;").replace(">","&gt;")+"\n" //sanitize
-          terms.forEach(term => {
-            if(term.length>2) {
-              modified = modified.replace(term,'<span class="search-hit">'+term+"</span>")
-            }
+          patterns.forEach(pattern => {
+            modified = modified.replaceAll(pattern,'<span class="search-hit">$1</span>')
           })
           content +=modified
         })

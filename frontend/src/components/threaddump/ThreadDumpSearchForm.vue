@@ -15,11 +15,12 @@
         <el-row :gutter="20" style="width: 100%;">
             <el-col :span="24">
                 <el-card class="mt-3" bg-variant="dark" text-variant="white" :header="$t('jifa.threadDumpSearch.searchTitle')" >
-                    <el-form :inline="false" :model="search" ref="formRef"  label-width="auto" size="small">
+                    <el-form :inline="false" :model="search" ref="formRef"  label-width="auto" size="small" :rules="rules">
                         <el-row :gutter="20">
-                            <el-col :span="6">
-                                <el-input clearable  v-model.lazy="search.term" :minLength="2" @keydown.enter.native.prevent="e => submitSearchForm()" :placeholder="$t('jifa.threadDumpSearch.searchTitle')" prefix-icon="el-icon-search" />
-                                
+                            <el-col :span="8">
+                                <el-form-item :label="$t('jifa.threadDumpSearch.searchInput')" prop="term" >
+                                    <el-input clearable size="large" v-model="search.term" @keydown.enter.native.prevent="e => submitSearchForm()" :placeholder="$t('jifa.threadDumpSearch.searchTitle')" prefix-icon="el-icon-search" />
+                                </el-form-item>
                             </el-col>
                             <el-col :span="6">
                                 <el-button type="success" icon="el-icon-search"
@@ -43,7 +44,7 @@
                             </el-col>
                             <el-col :span="6">
                                 <el-divider content-position="left">{{ $t('jifa.threadDumpSearch.searchOptions') }}</el-divider>
-                                <el-form-item :label="$t('jifa.threadDumpSearch.searchOptionRegex')">
+                                <el-form-item :label="$t('jifa.threadDumpSearch.searchOptionRegex')" >
                                     <el-switch v-model="search.regex" />
                                 </el-form-item>
                                 <el-form-item :label="$t('jifa.threadDumpSearch.searchOptionMatchCase')">
@@ -85,13 +86,37 @@ export default {
                 allowedJavaStates: null,
                 //file: null,
             },
+            rules: {
+                term: [
+                    { required: true, message: 'Please enter a search term', trigger: 'blur' },
+                    { validator: (rule, value, callback) => { this.validateSearch(rule, value, callback)}, trigger: 'blur' }]
+            },
+            validateSearch(rule, value, callback) {
+                if(this.search.regex) {
+                    try {
+                        new RegExp(this.search.term);
+                    } catch(e) {
+                        callback(new Error(e));
+                        return
+                    }
+                }
+                callback()
+            },
             threadStateOptions: ['RUNNABLE','SLEEPING','IN_OBJECT_WAIT','IN_OBJECT_WAIT_TIMED','PARKED','PARKED_TIMED','BLOCKED_ON_MONITOR_ENTER','TERMINATED']
         }
     },
 
     methods: {
+        
         submitSearchForm() {
-            this.$emit('submit', this.search)
+            let form = this.$refs['formRef']
+            form.validate((valid) => {
+                if (valid) {
+                    this.$emit('submit', this.search)
+                } else {
+                    return false
+                }
+            })
         },
         //parses a string value into a boolean, returns the default if value is empty or undefined
         toBoolean(value, defaultValue) {
@@ -116,7 +141,7 @@ export default {
         this.search.searchStack = this.toBoolean(query.searchStack, true)
         this.search.searchName = this.toBoolean(query.searchName, true)
         this.search.regex = this.toBoolean(query.regex, false)
-        this.search.matchCase = this.toBoolean(query.matchCase, true)
+        this.search.matchCase = this.toBoolean(query.matchCase, false)
         if(query.allowedJavaStates) {
             this.search.allowedJavaStates = query.allowedJavaStates
         }
