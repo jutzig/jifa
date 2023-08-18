@@ -64,7 +64,7 @@
                           <table style="width: 100%;" class="thread-state-table">
                             <thead>
                               <th>Thread State</th>
-                              <th v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{fileInfo.name}}</a></th>
+                              <th v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{computeFilename(fileInfo)}}</a></th>
                             </thead>
                             <tbody>
                                 <tr v-for="(state, stateIndex) in comparison.overviews[0].javaStates" :key="stateIndex">
@@ -175,13 +175,13 @@
           }
         },
         threadGroupStats: [],
-        threadGroupChartData: [],
+        threadGroupChartData: {},
         threadGroupChartOptions: {
           responsive: false,
           maintainAspectRatio: false,
           parsing: true,
         },
-        cpuConsumptionChartData: [],
+        cpuConsumptionChartData: {},
         cpuConsumptionChartOptions: {
           responsive: false,
           maintainAspectRatio: false,
@@ -344,10 +344,13 @@
       },
       computeFilename(fileInfo) {
         if(fileInfo.originalName != null && fileInfo.originalName.length<fileInfo.name) {
-          return fileInfo.originalName
+          return this.truncate(fileInfo.originalName, 40)
         }
-        return fileInfo.name
-      }
+        return this.truncate(fileInfo.name, 40)
+      },
+      truncate(str, n){
+        return (str.length > n) ? str.slice(0, n-1) + '...' : str;
+      },
     },
 
     
