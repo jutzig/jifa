@@ -40,7 +40,7 @@ public class ThreadDumpSearchRoute extends ThreadDumpBaseRoute {
                         @ParamKey(value = "searchStack", mandatory = false, defaultValue = "true") boolean searchStack,
                         @ParamKey(value = "searchName", mandatory = false, defaultValue = "true") boolean searchName,
                         @ParamKey(value = "searchState", mandatory = false, defaultValue = "true") boolean searchState,
-                        @ParamKey(value = "matchCase", mandatory = false, defaultValue = "true") boolean matchCase,
+                        @ParamKey(value = "matchCase", mandatory = false, defaultValue = "false") boolean matchCase,
                         @ParamKey(value = "allowedOSStates", mandatory = false) List<String> allowedOSStates,
                         @ParamKey(value = "allowedJavaStates", mandatory = false) List<String> allowedJavaStates) {
         SearchQuery query = SearchQuery.forTerms(terms);
