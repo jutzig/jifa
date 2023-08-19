@@ -473,7 +473,14 @@ exports.default = {
         milliseconds: "Milliseconds",
       },
       threadDumpCompare: 'Compare Thread Dumps',
-      threadDumpFilePlaceholder: 'Fill with the URL of the analyis page of another thread dump'
+      threadDumpFilePlaceholder: 'Fill with the URL of the analyis page of another thread dump',
+      diagnosis: {
+        title: "Diagnosis",
+        examine: "Examine",
+        messageColumn: "Message",
+        fileColumn: "File",
+        suggestionColumn: "Suggestion",
+      },
     },
 
     threadDumpCompare: {
@@ -487,6 +494,8 @@ exports.default = {
       cpuConsumingTitle: "CPU Consuming Threads",
       cpuConsumingDescription: "Displays the threads that consumed the most amount of CPU between the dumps. The threads are matched by tid, the thread name can change between dumps.",
       cpuConsumingDatasetLabel: "CPU Consumption in {unit}",
+      diagnosisTitle: "Diagnosis",
+      diagnosisDescription: "Provides an overview over any identified issues within the thread dumps",
     },
 
     threadDumpSearch: {

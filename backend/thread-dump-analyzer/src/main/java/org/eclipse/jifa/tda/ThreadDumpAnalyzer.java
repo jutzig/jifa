@@ -37,6 +37,9 @@ import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.util.CollectionUtil;
 import org.eclipse.jifa.common.util.PageViewBuilder;
 import org.eclipse.jifa.common.vo.PageView;
+import org.eclipse.jifa.tda.diagnoser.Diagnostic;
+import org.eclipse.jifa.tda.diagnoser.ThreadDumpAnalysisConfig;
+import org.eclipse.jifa.tda.diagnoser.ThreadDumpDiagnoser;
 import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.model.CallSiteTree;
@@ -196,10 +199,12 @@ public class ThreadDumpAnalyzer {
     /**
      * @param name   the thread name
      * @param type   the thread type
+     * @param threadState the thread state
+     * @param ids list of thread ids
      * @param paging paging request
-     * @return the threads filtered by name, state and type
+     * @return the threads filtered by name, state, type and id
      */
-    public PageView<VThread> threads(String name, ThreadType type, String threadState, PagingRequest paging) {
+    public PageView<VThread> threads(String name, ThreadType type, String threadState, List<Integer> ids, PagingRequest paging) {
         List<Thread> threads = new ArrayList<>();
         CollectionUtil.forEach(t -> {
             if (type != null && t.getType() != type) {
@@ -209,6 +214,9 @@ public class ThreadDumpAnalyzer {
                 return;
             }
             if (StringUtils.isNotBlank(threadState) && !getThreadState(t).equals(threadState) ) {
+                return;
+            }
+            if(ids != null && !ids.isEmpty() && !ids.contains(t.getId())) {
                 return;
             }
             threads.add(t);
@@ -424,6 +432,16 @@ public class ThreadDumpAnalyzer {
             result.add(vthread);
         });
         return result;
+    }
+
+    /**
+     * analyzes the thread dump for potential issues based on the given configuration and returns any issues found
+     * 
+     * @param config the config to use for the analyzer
+     * @return potentially empty list of diagnostic issues found
+     */
+    public List<Diagnostic> diagnose(ThreadDumpAnalysisConfig config) {
+        return new ThreadDumpDiagnoser().analyze(snapshot, config);
     }
 
     private Monitor findBlockingMonitor(Thread thread) 

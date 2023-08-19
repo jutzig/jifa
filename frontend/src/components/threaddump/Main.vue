@@ -51,6 +51,11 @@
         </el-table>
       </el-collapse-item>
       
+     <!-- Diagnose-->
+     <el-collapse-item :title="$t('jifa.threadDump.diagnosis.title')" name="diagnosis" id="diagnosis">
+        <diagnose :file="file"/>
+      </el-collapse-item>
+
       <!-- Blocked Threads-->
       <el-collapse-item :title="$t('jifa.threadDump.blockedThreadsLabel')" name="blockedThreads" id="blockedThreads">
         <blocked-threads :file="file"/>
@@ -148,6 +153,7 @@ import CpuConsumingThreads from "@/components/threaddump/CpuConsumingThreads"
 import FileContent from "@/components/threaddump/Content";
 
 import {formatTime, threadDumpService} from '@/util'
+import Diagnose from './Diagnose.vue';
 
 export default {
   props: ['file'],
@@ -160,7 +166,8 @@ export default {
     CallSiteTree,
     CpuConsumingThreads,
     FileContent,
-  },
+    Diagnose
+},
   data() {
     return {
       cellStyle: {padding: '8px'},
@@ -178,7 +185,7 @@ export default {
       basicInfo: null,
       threadStats: null,
       threadGroupStats: null,
-      activeNames: ['basicInfo', 'threadSummary', 'blockedThreads', 'cpuConsumingThreads', 'threadGroupSummary'],
+      activeNames: ['basicInfo', 'diagnosis', 'threadSummary', 'blockedThreads', 'cpuConsumingThreads', 'threadGroupSummary'],
       deadLockCount: 0,
       errorCount: 0,
 

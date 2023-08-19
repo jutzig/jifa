@@ -48,6 +48,7 @@
                   <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDumpCompare.navToTop') }}</a></div>
                   <div class="nav-item" v-for="(fileInfo) in comparison.fileInfos" :key="fileInfo.name"><a :href='"../threadDump?file=" + fileInfo.name' target="_blank" rel="noopener">{{computeFilename(fileInfo)}}</a></div>
                   <el-divider/>
+                  <div class="nav-item"><a href="#diagnostic">{{ $t('jifa.threadDumpCompare.diagnosisTitle') }}</a></div>
                   <div class="nav-item"><a href="#stateCompare">{{ $t('jifa.threadDumpCompare.stateCompare') }}</a></div>
                   <div class="nav-item"><a href="#threadGroupCompare">{{ $t('jifa.threadDumpCompare.threadGroupCompare') }}</a></div>
                   <div class="nav-item"><a href="#cpuConsumption">{{ $t('jifa.threadDumpCompare.cpuConsumingTitle') }}</a></div>
@@ -55,6 +56,18 @@
               </div>
              </el-aside>
               <el-main style="padding: 20px; height: 100%;" id="navTop">
+                <el-container>
+                  <el-card :header="$t('jifa.threadDumpCompare.diagnosisTitle')" style="width: 100%;" id="diagnostic">
+                    <span> {{ $t('jifa.threadDumpCompare.diagnosisDescription') }}</span>
+                    <div>
+                      <el-row :gutter="10">
+                        <el-col :span="24">
+                          <diagnose :file="file"></diagnose>
+                        </el-col>
+                      </el-row>
+                    </div>
+                  </el-card>
+                </el-container>
                 <el-container>
                   <el-card :header="$t('jifa.threadDumpCompare.stateCompare')" style="width: 100%;" id="stateCompare">
                     <span> {{ $t('jifa.threadDumpCompare.stateCompareDescription') }}</span>
@@ -113,15 +126,17 @@
   import Thread from "@/components/threaddump/Thread";
   import LineChart from '../charts/LineChart'
   import BarChart from '../charts/BarChart'
+  import Diagnose from "./Diagnose.vue";
     
 
   export default {
     components: {
-      LineChart,
-      BarChart,
-      ViewMenu,
-      Thread,
-    },
+    LineChart,
+    BarChart,
+    ViewMenu,
+    Thread,
+    Diagnose,
+},
     data() {
       return {
         color: [

@@ -66,6 +66,7 @@
                 <div class="nav-item"><a href="#navTop">{{ $t('jifa.threadDump.navToTop') }}</a></div>
                 <el-divider/>
                 <div class="nav-item"><a href="#overview">{{ $t('jifa.threadDump.basicInfo') }}</a></div>
+                <div class="nav-item"><a href="#diagnosis">{{ $t('jifa.threadDump.diagnosis.title') }}</a></div>
                 <div class="nav-item"><a href="#blockedThreads">{{ $t('jifa.threadDump.blockedThreadsLabel') }}</a></div>
                 <div class="nav-item"><a href="#cpuConsumingThreads">{{ $t('jifa.threadDump.cpuConsumingThreadsLabel') }}</a></div>
                 <div class="nav-item"><a href="#threadSummary">{{ $t('jifa.threadDump.threadSummary') }}</a></div>

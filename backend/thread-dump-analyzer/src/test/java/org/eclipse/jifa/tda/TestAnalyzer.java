@@ -21,6 +21,8 @@ import java.util.List;
 import org.eclipse.jifa.common.listener.DefaultProgressListener;
 import org.eclipse.jifa.common.request.PagingRequest;
 import org.eclipse.jifa.common.vo.PageView;
+import org.eclipse.jifa.tda.diagnoser.Diagnostic;
+import org.eclipse.jifa.tda.diagnoser.ThreadDumpAnalysisConfig;
 import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.OSTreadState;
 import org.eclipse.jifa.tda.enums.ThreadType;
@@ -220,12 +222,28 @@ public class TestAnalyzer extends TestBase {
         assertEquals(5,result.size());
     }
 
-     @Test
+    @Test
     public void testSearchClassAndMethod() throws Exception {
         ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
         List<VSearchResult> result = tda.search(SearchQuery.forTerms("Reference.waitForReferencePendingList").build());
         assertEquals(1,result.size());
     }
 
+    @Test
+    public void testDiagnoseDefaultConfigDeadlock() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_with_deadlocks.log"), new DefaultProgressListener());
+        List<Diagnostic> result = tda.diagnose(new ThreadDumpAnalysisConfig());
+        assertEquals(1,result.size());
+        assertEquals("2 threads are in a deadlock",result.get(0).getMessage());
+    }
+
+    @Test
+    public void testDiagnoseDefaultConfigLarge() throws Exception {
+        ThreadDumpAnalyzer tda = new ThreadDumpAnalyzer(pathOfResource("jstack_11_large_with_blocked.log"), new DefaultProgressListener());
+        List<Diagnostic> result = tda.diagnose(new ThreadDumpAnalysisConfig());
+        assertEquals(2,result.size());
+        assertEquals("27 threads are blocked",result.get(0).getMessage());
+        assertEquals("5 threads have a very large stack size (> 200)",result.get(1).getMessage());
+    }
     
 }

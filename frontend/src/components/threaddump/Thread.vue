@@ -57,7 +57,7 @@ import axios from "axios";
 import {threadDumpService} from "@/util";
 
 export default {
-  props: ['file', 'groupName', 'type', 'id', 'state'],
+  props: ['file', 'groupName', 'type', 'id', 'state', 'idList'],
   data() {
     return {
       cellStyle: {padding: '8px'},
@@ -121,6 +121,9 @@ export default {
         if (this.state) {
           params.state = this.state;
         }
+        if (Array.isArray(this.idList)) {
+          params.id = this.idList;
+        }
         if (this.id) {
           params.id = this.id
           params.page = null
@@ -132,7 +135,12 @@ export default {
 
     loadData(page) {
       this.loading = true
-      axios.get(threadDumpService(this.file, this.api()), {params: this.params(page)})
+      axios.get(threadDumpService(this.file, this.api()), {
+          params: this.params(page),
+          paramsSerializer: {
+            indexes: null, // no brackets for multi-value params
+          }
+        })
           .then(resp => {
             let data = resp.data
             let loaded = this.tableData
@@ -192,13 +200,14 @@ export default {
 
   computed: {
     conditions() {
-      const {groupName, name, type, id, state} = this
+      const {groupName, name, type, id, state, idList} = this
       return {
         groupName,
         name,
         type,
         id,
-        state
+        state,
+        idList
       }
     }
   },
