@@ -15,11 +15,11 @@
     <el-dialog :visible.sync="threadTableVisible" width="60%" top="5vh">
       <thread :file="file" :id="selectedThreadId" :name="selectedThreadName" />
     </el-dialog>
-    <h4 v-if="treeData.length==0">
-      <i style="color: green" class="el-icon-success"></i> No Threads are blocked <el-icon><CircleCheckFilled /></el-icon>
-    </h4>
+    <h5 v-if="treeData.length==0">
+      <i style="color: #67C23A" class="el-icon-success"></i> No Threads are blocked <el-icon><CircleCheckFilled /></el-icon>
+    </h5>
     <span v-for="(item, index) in treeData" v-bind:key="index">
-      <h4 style="margin-top: 15px; margin-bottom: 15px;"><i style="color: red" class="el-icon-warning"></i> {{$tc('jifa.threadDump.blockedThreads.title', item.children.length, { count: item.children.length, blocker: item.name })}}</h4>
+      <h5 style="margin-top: 15px; margin-bottom: 15px;"><i style="color: #F56C6C" class="el-icon-warning"></i> {{$tc('jifa.threadDump.blockedThreads.title', item.children.length, { count: item.children.length, blocker: item.name })}}</h5>
       <svg :cell="index" width="400" height="220">
         <g transform="translate(5, 5)">
           <g class="links"></g>
@@ -65,7 +65,7 @@ export default {
           loaded.push({
             name: blockingThread.blockingThread.name,
             value: 15,
-            level: "red",
+            level: "#F56C6C",
             id: blockingThread.blockingThread.id,
             children: this.transformChildNodes(blockingThread)
           })
@@ -94,7 +94,7 @@ export default {
 
         children.push({
           name: child.name,
-          level: "blue",
+          level: "#409EFF",
           value: 10,
           id: child.id
         });
