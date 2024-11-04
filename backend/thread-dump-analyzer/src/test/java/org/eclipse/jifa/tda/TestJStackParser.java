@@ -67,4 +67,12 @@ public class TestJStackParser extends TestBase {
         assertEquals(2, snapshot.getJavaThreads().size());
         assertEquals(7692, snapshot.getPid());
     }
+
+      @Test
+    public void testJDK21WithPidLog() throws ParserException, URISyntaxException {
+        Snapshot snapshot = parseFile("jstack_21.log");
+        Assert.assertTrue(snapshot.getErrors().isEmpty());
+        assertEquals(1, snapshot.getJavaThreads().size());
+        assertEquals("main", snapshot.getJavaThreads().get(0).getName());
+    }
 }
