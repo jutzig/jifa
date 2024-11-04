@@ -15,6 +15,8 @@ package org.eclipse.jifa.tda;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -47,8 +49,7 @@ public class TestAnalyzer extends TestBase {
         Overview o2 = tda.overview();
         Assert.assertEquals(o1, o2);
         Assert.assertEquals(o1.hashCode(), o2.hashCode());
-
-        PageView<VThread> threads = tda.threads("main", ThreadType.JAVA, null, new PagingRequest(1, 1));
+        PageView<VThread> threads = tda.threads("main", ThreadType.JAVA, null, null, new PagingRequest(1, 1));
         Assert.assertEquals(1, threads.getTotalSize());
 
         PageView<VFrame> frames = tda.callSiteTree(0, new PagingRequest(1, 16));
@@ -72,22 +73,22 @@ public class TestAnalyzer extends TestBase {
         Assert.assertEquals(o1, o2);
         Assert.assertEquals(o1.hashCode(), o2.hashCode());
 
-        PageView<VThread> threads = tda.threads(null, null, JavaThreadState.RUNNABLE.toString(), new PagingRequest(1, 100));
+        PageView<VThread> threads = tda.threads(null, null, JavaThreadState.RUNNABLE.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(18, threads.getTotalSize());
 
-        threads = tda.threads(null, ThreadType.GC, JavaThreadState.RUNNABLE.toString(), new PagingRequest(1, 100));
+        threads = tda.threads(null, ThreadType.GC, JavaThreadState.RUNNABLE.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(10, threads.getTotalSize());
 
-        threads = tda.threads(null, ThreadType.JAVA, JavaThreadState.RUNNABLE.toString(), new PagingRequest(1, 100));
+        threads = tda.threads(null, ThreadType.JAVA, JavaThreadState.RUNNABLE.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(3, threads.getTotalSize());
 
-        threads = tda.threads(null, ThreadType.JAVA, JavaThreadState.IN_OBJECT_WAIT.toString(), new PagingRequest(1, 100));
+        threads = tda.threads(null, ThreadType.JAVA, JavaThreadState.IN_OBJECT_WAIT.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(2, threads.getTotalSize());
 
-        threads = tda.threads(null, null, OSTreadState.OBJECT_WAIT.toString(), new PagingRequest(1, 100));
+        threads = tda.threads(null, null, OSTreadState.OBJECT_WAIT.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(0, threads.getTotalSize());
 
-        threads = tda.threads("Refer", ThreadType.JAVA, JavaThreadState.IN_OBJECT_WAIT.toString(), new PagingRequest(1, 100));
+        threads = tda.threads("Refer", ThreadType.JAVA, JavaThreadState.IN_OBJECT_WAIT.toString(), null, new PagingRequest(1, 100));
         Assert.assertEquals(1, threads.getTotalSize());
     }
 

@@ -3,11 +3,11 @@
   "version": "0.2.0-SNAPSHOT",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "dev-build": "vue-cli-service build --mode development --dest build",
-    "prod-build": "vue-cli-service build --mode production --dest build",
-    "build": "vue-cli-service build --mode production --dest build",
-    "lint": "vue-cli-service lint"
+    "serve": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service serve",
+    "dev-build": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service build --mode development --dest build",
+    "prod-build": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service build --mode production --dest build",
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service build --mode production --dest build",
+    "lint": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service lint"
   },
   "dependencies": {
     "axios": "^1.4.0",

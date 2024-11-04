@@ -13,12 +13,16 @@
 
 package org.eclipse.jifa.tda;
 
+import org.eclipse.jifa.tda.enums.JavaThreadState;
+import org.eclipse.jifa.tda.model.JavaThread;
 import org.eclipse.jifa.tda.model.Snapshot;
 import org.eclipse.jifa.tda.parser.ParserException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -66,5 +70,26 @@ public class TestJStackParser extends TestBase {
         Assert.assertTrue(snapshot.getErrors().isEmpty());
         assertEquals(2, snapshot.getJavaThreads().size());
         assertEquals(7692, snapshot.getPid());
+    }
+
+      @Test
+    public void testJDK21WithPidLog() throws ParserException, URISyntaxException {
+        Snapshot snapshot = parseFile("jstack_21.log");
+        Assert.assertTrue(snapshot.getErrors().isEmpty());
+        assertEquals(10, snapshot.getJavaThreads().size());
+        assertEquals("main", snapshot.getJavaThreads().get(0).getName());
+        assertFalse(snapshot.getJavaThreads().get(0).isDaemon());
+
+        JavaThread thread = snapshot.getJavaThreads().get(8);
+        assertEquals("Common-Cleaner", thread.getName());
+        assertEquals(746.47, thread.getCpu(),0.1);
+        assertEquals(826770670.0, thread.getElapsed(),0.1);
+        assertEquals(JavaThreadState.PARKED_TIMED, thread.getJavaThreadState());
+        assertEquals(18, thread.getJid());
+        assertTrue(thread.isDaemon());
+        assertEquals(1561, thread.getNid());
+        assertEquals(8, thread.getPriority());
+        assertEquals(0, thread.getOsPriority());
+        assertEquals(139744483852208l, thread.getTid());
     }
 }
